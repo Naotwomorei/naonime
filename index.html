@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAONIME - Streaming & Social Platform</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #e0e0e0; }
+        header { background-color: #1f1f1f; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00bcd4; position: sticky; top: 0; z-index: 1000; flex-wrap: wrap; gap: 10px; }
+        .logo { font-size: 24px; font-weight: bold; color: #00bcd4; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; }
+        .nav-links { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .nav-link { color: #aaa; text-decoration: none; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .nav-link:hover, .nav-link.active { color: #00bcd4; }
+        .user-section { display: flex; gap: 10px; align-items: center; }
+        .search-container { display: flex; gap: 10px; }
+        input[type="email"], input[type="password"], input[type="text"] { padding: 8px 15px; width: 200px; border-radius: 4px; border: 1px solid #333; background: #2a2a2a; color: #fff; outline: none; }
+        input:focus { border-color: #00bcd4; }
+        button { padding: 8px 15px; background-color: #00bcd4; border: none; border-radius: 4px; color: #121212; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { background-color: #008ba3; }
+        .btn-secondary { background-color: #333; color: #fff; }
+        .btn-secondary:hover { background-color: #444; }
+        .btn-admin { background-color: #ff9800; color: #121212; }
+        
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; }
+        .section-title { font-size: 20px; margin-bottom: 15px; border-left: 4px solid #00bcd4; padding-left: 10px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
+        .card { background-color: #1e1e1e; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.2s; cursor: pointer; display: flex; flex-direction: column; }
+        .card:hover { transform: translateY(-5px); }
+        .card img { width: 100%; height: 250px; object-fit: cover; }
+        .card-content { padding: 12px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; }
+        .card h3 { font-size: 14px; margin-bottom: 8px; color: #fff; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .badge { font-size: 11px; background: #333; color: #00bcd4; padding: 3px 6px; border-radius: 3px; align-self: flex-start; }
+        
+        .loading { text-align: center; grid-column: 1 / -1; padding: 40px; font-size: 18px; color: #888; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: #1f1f1f; width: 90%; max-width: 750px; max-height: 85vh; border-radius: 8px; overflow-y: auto; padding: 20px; position: relative; }
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa; }
+        .close-btn:hover { color: #fff; }
+        
+        /* Profile & Social UI */
+        .profile-banner { width: 100%; height: 150px; background-size: cover; background-position: center; border-radius: 6px; margin-bottom: 45px; position: relative; }
+        .profile-avatar { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #00bcd4; position: absolute; bottom: -35px; left: 20px; background: #111; }
+        .profile-info { padding: 0 20px; margin-bottom: 20px; }
+        
+        /* Chat & Nobar UI */
+        .chat-box { height: 300px; border: 1px solid #333; background: #161616; border-radius: 6px; overflow-y: auto; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .chat-msg { font-size: 13px; background: #222; padding: 6px 10px; border-radius: 4px; }
+        .chat-msg span { color: #00bcd4; font-weight: bold; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        th, td { border: 1px solid #333; padding: 8px 12px; text-align: left; }
+        th { background: #2a2a2a; color: #00bcd4; }
+        .fav-btn { background: #ff5252; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; margin-top: 10px; }
+        .fav-btn.active { background: #4caf50; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo" id="logoBtn">NAONIME</div>
+        <div class="nav-links">
+            <a class="nav-link active" id="homeNav">Beranda</a>
+            <a class="nav-link" id="favNav">Favorit</a>
+            <a class="nav-link" id="historyNav">Riwayat</a>
+            <a class="nav-link" id="chatNav">Public Chat</a>
+            <a class="nav-link" id="nobarNav">Nobar (5 User)</a>
+            <a class="nav-link" id="friendNav">Teman</a>
+            <a class="nav-link" id="profileNav">Profil Saya</a>
+            <a class="nav-link" id="adminNav" style="display:none; color: #ff9800;">Panel Admin</a>
+        </div>
+        <div class="user-section" id="userSection"></div>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Cari anime...">
+            <button id="searchBtn">Cari</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <h2 class="section-title" id="sectionTitle">Anime Terbaru</h2>
+        <div id="animeContainer" class="grid">
+            <div class="loading">Memuat data Kumanime...</div>
+        </div>
+    </div>
+
+    <!-- Modal Utama -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeModalBtn">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const API_URL = '';
+        const ADMIN_EMAIL = 'akuadminkamumemberyah@gmail.com';
+        let currentView = 'home';
+        let currentUser = localStorage.getItem('kumanime_email') || null;
+        let userRole = localStorage.getItem('kumanime_role') || 'user';
+        let userData = { favorites: [], history: [], profile: { avatar: '', banner: '', bio: '' }, friends: { requests: [], list: [] } };
+
+        // DOM Listeners
+        document.getElementById('logoBtn').addEventListener('click', () => { switchView('home'); muatAnimeTerbaru(); });
+        document.getElementById('homeNav').addEventListener('click', () => { switchView('home'); muatAnimeTerbaru(); });
+        document.getElementById('favNav').addEventListener('click', () => { checkAuth(() => { switchView('fav'); tampilkanGrid(userData.favorites, 'Daftar Favorit Saya'); }); });
+        document.getElementById('historyNav').addEventListener('click', () => { checkAuth(() => { switchView('history'); tampilkanGrid(userData.history, 'Riwayat Tontonan'); }); });
+        document.getElementById('chatNav').addEventListener('click', () => { checkAuth(bukaPublicChat); });
+        document.getElementById('nobarNav').addEventListener('click', () => { checkAuth(bukaNobarLobby); });
+        document.getElementById('friendNav').addEventListener('click', () => { checkAuth(bukaMenuTeman); });
+        document.getElementById('profileNav').addEventListener('click', () => { checkAuth(bukaProfilSaya); });
+        document.getElementById('adminNav').addEventListener('click', () => { if(userRole==='admin') bukaPanelAdmin(); });
+        document.getElementById('searchBtn').addEventListener('click', cariAnime);
+        document.getElementById('searchInput').addEventListener('keypress', e => { if(e.key==='Enter') cariAnime(); });
+        document.getElementById('closeModalBtn').addEventListener('click', tutupModal);
+
+        window.addEventListener('click', e => { if(e.target === document.getElementById('detailModal')) tutupModal(); });
+
+        async function syncDataCloud() {
+            if(!currentUser) return;
+            try {
+                let res = await fetch(`${API_URL}/api/user/${currentUser}/data`);
+                let json = await res.json();
+                if(json.success) {
+                    userData = json.data;
+                    userRole = json.data.role || (currentUser === ADMIN_EMAIL ? 'admin' : 'user');
+                    localStorage.setItem('kumanime_role', userRole);
+                    updateAdminNav();
+                }
+            } catch(e) {}
+        }
+
+        async function saveCloudData() {
+            if(!currentUser) return;
+            await fetch(`${API_URL}/api/user/${currentUser}/data`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(userData)
+            });
+        }
+
+        function updateAdminNav() {
+            let adminNav = document.getElementById('adminNav');
+            if(currentUser === ADMIN_EMAIL || userRole === 'admin') adminNav.style.display = 'block';
+            else adminNav.style.display = 'none';
+        }
+
+        function renderUserSection() {
+            let sec = document.getElementById('userSection');
+            updateAdminNav();
+            if(currentUser) {
+                let badge = currentUser === ADMIN_EMAIL ? '👑 [ADMIN]' : '📧';
+                sec.innerHTML = `
+                    <span style="font-size:12px; color:${currentUser===ADMIN_EMAIL?'#ff9800':'#00bcd4'}; font-weight:bold;">${badge} ${currentUser}</span>
+                    <button class="btn-secondary" id="logoutBtn" style="padding:4px 8px; font-size:11px;">Keluar</button>
+                `;
+                document.getElementById('logoutBtn').addEventListener('click', () => {
+                    localStorage.removeItem('kumanime_email');
+                    localStorage.removeItem('kumanime_role');
+                    currentUser = null;
+                    userRole = 'user';
+                    renderUserSection();
+                    muatAnimeTerbaru();
+                });
+                syncDataCloud();
+            } else {
+                sec.innerHTML = `<button style="padding:6px 12px; font-size:12px;" id="loginModalBtn">Masuk / Daftar</button>`;
+                document.getElementById('loginModalBtn').addEventListener('click', bukaModalAuth);
+            }
+        }
+
+        function checkAuth(cb) {
+            if(!currentUser) bukaModalAuth();
+            else cb();
+        }
+
+        function bukaModalAuth() {
+            let modal = document.getElementById('detailModal');
+            let body = document.getElementById('modalBody');
+            modal.style.display = 'flex';
+            body.innerHTML = `
+                <div class="auth-form" style="display:flex; flex-direction:column; gap:12px; max-width:320px; margin:20px auto;">
+                    <h3 style="color:#00bcd4; text-align:center;">Akun Kumanime</h3>
+                    <input type="email" id="authEmail" placeholder="nama@gmail.com">
+                    <input type="password" id="authPassword" placeholder="Kata sandi bebas">
+                    <button id="doLogin">Masuk</button>
+                    <button class="btn-secondary" id="doRegister">Daftar Akun</button>
+                    <p id="authMsg" style="color:#ff5252; font-size:12px; text-align:center;"></p>
+                </div>
+            `;
+            document.getElementById('doLogin').addEventListener('click', async () => {
+                let email = document.getElementById('authEmail').value.trim();
+                let password = document.getElementById('authPassword').value.trim();
+                let res = await fetch(`${API_URL}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, password}) });
+                let json = await res.json();
+                if(json.success) {
+                    currentUser = json.data.email;
+                    userRole = json.data.role;
+                    localStorage.setItem('kumanime_email', currentUser);
+                    localStorage.setItem('kumanime_role', userRole);
+                    tutupModal();
+                    renderUserSection();
+                    await syncDataCloud();
+                    muatAnimeTerbaru();
+                } else { document.getElementById('authMsg').innerText = json.message; }
+            });
+            document.getElementById('doRegister').addEventListener('click', async () => {
+                let email = document.getElementById('authEmail').value.trim();
+                let password = document.getElementById('authPassword').value.trim();
+                let res = await fetch(`${API_URL}/api/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, password}) });
+                let json = await res.json();
+                if(json.success) {
+                    document.getElementById('authMsg').style.color = '#4caf50';
+                    document.getElementById('authMsg').innerText = 'Registrasi berhasil! Silakan Masuk.';
+                } else { document.getElementById('authMsg').innerText = json.message; }
+            });
+        }
+
+        // --- PUBLIC CHAT ---
+        function bukaPublicChat() {
+            switchView('chat');
+            document.getElementById('sectionTitle').innerText = 'Public Chat Global';
+            let container = document.getElementById('animeContainer');
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div style="max-width:700px; margin:0 auto; background:#1f1f1f; padding:20px; border-radius:8px;">
+                    <h3>💬 Ruang Obrolan Publik Kumanime</h3>
+                    <p style="font-size:12px; color:#aaa; margin-bottom:15px;">Ngobrol santai dengan semua pengunjung web secara real-time.</p>
+                    <div class="chat-box" id="publicChatBox"></div>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="chatInput" placeholder="Tulis pesan..." style="flex-grow:1;">
+                        <button id="sendChatBtn">Kirim</button>
+                    </div>
+                </div>
+            `;
+            socket.emit('load_public_chat');
+            socket.off('public_chat_history');
+            socket.off('new_public_message');
+
+            socket.on('public_chat_history', msgs => {
+                let box = document.getElementById('publicChatBox');
+                box.innerHTML = msgs.map(m => `<div class="chat-msg"><span>${m.email}</span> [${m.time}]: ${m.text}</div>`).join('');
+                box.scrollTop = box.scrollHeight;
+            });
+            socket.on('new_public_message', m => {
+                let box = document.getElementById('publicChatBox');
+                box.innerHTML += `<div class="chat-msg"><span>${m.email}</span> [${m.time}]: ${m.text}</div>`;
+                box.scrollTop = box.scrollHeight;
+            });
+
+            document.getElementById('sendChatBtn').onclick = () => {
+                let input = document.getElementById('chatInput');
+                let text = input.value.trim();
+                if(text) {
+                    socket.emit('send_public_message', { email: currentUser, text });
+                    input.value = '';
+                }
+            };
+            document.getElementById('chatInput').onkeypress = e => { if(e.key==='Enter') document.getElementById('sendChatBtn').click(); };
+        }
+
+        // --- NOBAR (WATCH PARTY - MAX 5 USERS) ---
+        let currentNobarRoom = null;
+        function bukaNobarLobby() {
+            switchView('nobar');
+            document.getElementById('sectionTitle').innerText = 'Nobar Room (Maks 5 User)';
+            let container = document.getElementById('animeContainer');
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div style="max-width:600px; margin:0 auto; background:#1f1f1f; padding:30px; border-radius:8px; text-align:center;">
+                    <h3 style="color:#00bcd4; margin-bottom:10px;">🎉 Nonton Bareng (Nobar)</h3>
+                    <p style="font-size:13px; color:#aaa; margin-bottom:20px;">Buat room atau gabung kode room teman Anda (maksimal 5 orang per room).</p>
+                    <input type="text" id="roomCodeInput" placeholder="Masukkan Kode Room (misal: nobar123)" style="width:100%; margin-bottom:10px; text-align:center;"><br>
+                    <button id="joinRoomBtn" style="width:100%;">Masuk Room Nobar</button>
+                    <p id="nobarStatus" style="color:#ff5252; margin-top:10px; font-size:13px;"></p>
+                </div>
+            `;
+
+            document.getElementById('joinRoomBtn').onclick = () => {
+                let code = document.getElementById('roomCodeInput').value.trim();
+                if(!code) { document.getElementById('nobarStatus').innerText = 'Masukkan kode room!'; return; }
+                currentNobarRoom = code;
+                socket.emit('join_nobar_room', { roomCode: code, email: currentUser });
+            };
+
+            socket.off('nobar_joined');
+            socket.off('nobar_error');
+            socket.on('nobar_joined', code => {
+                bukaRuangNobarAktif(code);
+            });
+            socket.on('nobar_error', err => {
+                document.getElementById('nobarStatus').innerText = err;
+            });
+        }
+
+        function bukaRuangNobarAktif(code) {
+            let container = document.getElementById('animeContainer');
+            container.innerHTML = `
+                <div style="max-width:800px; margin:0 auto; background:#1f1f1f; padding:20px; border-radius:8px;">
+                    <h3>📺 Ruang Nobar Aktif: <span style="color:#00bcd4;">${code}</span></h3>
+                    <p style="font-size:12px; color:#aaa; margin-bottom:15px;">Bagikan kode room ini ke maksimal 4 teman Anda.</p>
+                    <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                        <div style="flex-grow:2; min-width:300px;">
+                            <div id="nobarVideoArea" style="background:#000; height:300px; display:flex; align-items:center; justify-content:center; border-radius:6px; color:#888;">
+                                Silakan pilih anime/episode untuk ditonton bersama di room ini.
+                            </div>
+                        </div>
+                        <div style="flex-grow:1; min-width:250px;">
+                            <h4>Chat Room Nobar</h4>
+                            <div class="chat-box" id="nobarChatBox" style="height:230px;"></div>
+                            <div style="display:flex; gap:5px;">
+                                <input type="text" id="nobarChatInput" placeholder="Chat room..." style="flex-grow:1;">
+                                <button id="nobarSendBtn">Kirim</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-secondary" id="leaveNobarBtn" style="margin-top:15px;">Keluar Room</button>
+                </div>
+            `;
+            document.getElementById('leaveNobarBtn').onclick = bukaNobarLobby;
+        }
+
+        // --- FRIEND SYSTEM & PROFILE ---
+        function bukaMenuTeman() {
+            switchView('friend');
+            document.getElementById('sectionTitle').innerText = 'Daftar Teman & Pertemanan';
+            let container = document.getElementById('animeContainer');
+            container.style.display = 'block';
+            let reqs = userData.friends.requests || [];
+            let list = userData.friends.list || [];
+
+            container.innerHTML = `
+                <div style="max-width:700px; margin:0 auto; background:#1f1f1f; padding:20px; border-radius:8px;">
+                    <h3>👥 Tambah Teman</h3>
+                    <div style="display:flex; gap:10px; margin:15px 0;">
+                        <input type="email" id="friendEmailInput" placeholder="Email teman (@gmail.com)" style="flex-grow:1;">
+                        <button id="sendFriendReqBtn">Kirim Permintaan</button>
+                    </div>
+                    <p id="friendMsg" style="font-size:12px; color:#4caf50; margin-bottom:15px;"></p>
+
+                    <h4>📥 Permintaan Masuk (${reqs.length})</h4>
+                    <div id="reqList" style="margin:10px 0 20px 0;">
+                        ${reqs.length === 0 ? '<p style="color:#888; font-size:13px;">Tidak ada permintaan pertemanan.</p>' : reqs.map(r => `<div style="background:#262626; padding:8px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;"><span>${r}</span> <button onclick="terimaTeman('${r}')" style="padding:4px 10px; font-size:11px;">Terima</button></div>`).join('')}
+                    </div>
+
+                    <h4>🤝 Daftar Teman Saya (${list.length})</h4>
+                    <div id="friendList" style="margin:10px 0;">
+                        ${list.length === 0 ? '<p style="color:#888; font-size:13px;">Belum ada teman.</p>' : list.map(f => `<div style="background:#262626; padding:10px; margin-bottom:5px; border-radius:4px;">👤 ${f}</div>`).join('')}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('sendFriendReqBtn').onclick = async () => {
+                let receiver = document.getElementById('friendEmailInput').value.trim();
+                let res = await fetch(`${API_URL}/api/friends/request`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sender: currentUser, receiver}) });
+                let json = await res.json();
+                if(json.success) document.getElementById('friendMsg').innerText = 'Permintaan pertemanan terkirim!';
+                else document.getElementById('friendMsg').innerText = json.message;
+            };
+        }
+
+        async function terimaTeman(friendEmail) {
+            await fetch(`${API_URL}/api/friends/accept`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user: currentUser, friend: friendEmail}) });
+            await syncDataCloud();
+            bukaMenuTeman();
+        }
+
+        function bukaProfilSaya() {
+            switchView('profile');
+            document.getElementById('sectionTitle').innerText = 'Profil & Kustomisasi';
+            let container = document.getElementById('animeContainer');
+            container.style.display = 'block';
+            let p = userData.profile || { avatar: '', banner: '', bio: '' };
+
+            container.innerHTML = `
+                <div style="max-width:700px; margin:0 auto; background:#1f1f1f; border-radius:8px; overflow:hidden;">
+                    <div class="profile-banner" style="background-image: url('${p.banner || 'https://via.placeholder.com/600x200?text=Banner'}');">
+                        <img src="${p.avatar || 'https://via.placeholder.com/150?text=Avatar'}" class="profile-avatar" alt="Avatar">
+                    </div>
+                    <div class="profile-info" style="padding-top:40px;">
+                        <h3 style="color:#00bcd4;">${currentUser}</h3>
+                        <p style="font-size:12px; color:#aaa; margin:10px 0;">Bio: ${p.bio || 'Belum ada bio.'}</p>
+                        
+                        <h4 style="margin-top:20px; border-bottom:1px solid #333; padding-bottom:5px;">Edit Profil</h4>
+                        <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+                            <label style="font-size:12px; color:#aaa;">URL Foto Profil (Avatar):</label>
+                            <input type="text" id="editAvatar" value="${p.avatar || ''}" style="width:100%;">
+                            <label style="font-size:12px; color:#aaa;">URL Banner Profil:</label>
+                            <input type="text" id="editBanner" value="${p.banner || ''}" style="width:100%;">
+                            <label style="font-size:12px; color:#aaa;">Bio Singkat:</label>
+                            <input type="text" id="editBio" value="${p.bio || ''}" style="width:100%;">
+                            <button id="saveProfileBtn" style="margin-top:10px;">Simpan Perubahan Profil</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('saveProfileBtn').onclick = async () => {
+                userData.profile = {
+                    avatar: document.getElementById('editAvatar').value.trim(),
+                    banner: document.getElementById('editBanner').value.trim(),
+                    bio: document.getElementById('editBio').value.trim()
+                };
+                await saveCloudData();
+                alert('Profil berhasil diperbarui!');
+                bukaProfilSaya();
+            };
+        }
+
+        function bukaPanelAdmin() {
+            let modal = document.getElementById('detailModal');
+            let body = document.getElementById('modalBody');
+            modal.style.display = 'flex';
+            body.innerHTML = '<h2>Panel Admin</h2><p>Memuat...</p>';
+            fetch(`${API_URL}/api/admin/users`).then(r => r.json()).then(json => {
+                if(json.success) {
+                    let rows = json.data.map((u,i) => `<tr><td>${i+1}</td><td>${u.email}</td><td>${u.role}</td><td>${new Date(u.createdAt).toLocaleString()}</td></tr>`).join('');
+                    body.innerHTML = `<h2 style="color:#ff9800;">👑 Panel Admin Kumanime</h2><table><thead><tr><th>No</th><th>Email</th><th>Role</th><th>Terdaftar</th></tr></thead><tbody>${rows}</tbody></table>`;
+                }
+            });
+        }
+
+        function switchView(v) {
+            currentView = v;
+            ['homeNav', 'favNav', 'historyNav', 'chatNav', 'nobarNav', 'friendNav', 'profileNav', 'adminNav'].forEach(id => {
+                let el = document.getElementById(id);
+                if(el) el.classList.remove('active');
+            });
+            if(v==='home') document.getElementById('homeNav').classList.add('active');
+            else if(v==='fav') document.getElementById('favNav').classList.add('active');
+            else if(v==='history') document.getElementById('historyNav').classList.add('active');
+            else if(v==='chat') document.getElementById('chatNav').classList.add('active');
+            else if(v==='nobar') document.getElementById('nobarNav').classList.add('active');
+            else if(v==='friend') document.getElementById('friendNav').classList.add('active');
+            else if(v==='profile') document.getElementById('profileNav').classList.add('active');
+        }
+
+        async function muatAnimeTerbaru() {
+            switchView('home');
+            document.getElementById('sectionTitle').innerText = "Anime Terbaru";
+            let container = document.getElementById('animeContainer');
+            container.style.display = 'grid';
+            container.innerHTML = '<div class="loading">Memuat anime...</div>';
+            try {
+                let res = await fetch(`${API_URL}/api/home`);
+                let json = await res.json();
+                if(json.success) tampilkanGrid(json.data.items, "Anime Terbaru");
+            } catch(e) { container.innerHTML = '<div class="loading" style="color:#ff5252;">Gagal memuat API.</div>'; }
+        }
+
+        async function cariAnime() {
+            let q = document.getElementById('searchInput').value.trim();
+            if(!q) { muatAnimeTerbaru(); return; }
+            switchView('home');
+            document.getElementById('sectionTitle').innerText = `Pencarian: "${q}"`;
+            let container = document.getElementById('animeContainer');
+            container.style.display = 'grid';
+            container.innerHTML = '<div class="loading">Mencari...</div>';
+            let res = await fetch(`${API_URL}/api/search?q=${q}`);
+            let json = await res.json();
+            if(json.success) tampilkanGrid(json.data.items, `Pencarian: "${q}"`);
+        }
+
+        function tampilkanGrid(items, title) {
+            document.getElementById('sectionTitle').innerText = title;
+            let container = document.getElementById('animeContainer');
+            container.style.display = 'grid';
+            container.innerHTML = '';
+            if(!items || items.length === 0) { container.innerHTML = '<div class="loading">Tidak ada data.</div>'; return; }
+            items.forEach(anime => {
+                let slug = anime.url ? anime.url.split('/').filter(Boolean).pop() : '';
+                let card = document.createElement('div');
+                card.className = 'card';
+                card.addEventListener('click', () => bukaDetail(slug));
+                card.innerHTML = `
+                    <img src="${anime.poster || ''}" alt="${anime.title}" onerror="this.src='https://via.placeholder.com/180x250?text=No+Image'">
+                    <div class="card-content">
+                        <h3>${anime.title}</h3>
+                        <span class="badge">${anime.episode || anime.status || 'Update'}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function bukaDetail(slug) {
+            let modal = document.getElementById('detailModal');
+            let body = document.getElementById('modalBody');
+            modal.style.display = 'flex';
+            body.innerHTML = '<p style="text-align:center; padding:20px;">Memuat detail...</p>';
+
+            let res = await fetch(`${API_URL}/api/anime/${slug}`);
+            let json = await res.json();
+            if(json.success) {
+                let data = json.data;
+                let isFav = currentUser && userData.favorites.some(f => f.title === data.title);
+
+                let favBtn = document.createElement('button');
+                favBtn.className = `fav-btn ${isFav ? 'active' : ''}`;
+                favBtn.innerText = isFav ? '✓ Tersimpan di Favorit' : '+ Tambah ke Favorit';
+                favBtn.onclick = () => {
+                    if(!currentUser) { bukaModalAuth(); return; }
+                    if(isFav) {
+                        userData.favorites = userData.favorites.filter(f => f.title !== data.title);
+                        isFav = false; favBtn.className = 'fav-btn'; favBtn.innerText = '+ Tambah ke Favorit';
+                    } else {
+                        userData.favorites.push({ title: data.title, url: `${API_URL}/api/anime/${slug}`, poster: data.poster, episode: data.episodes?.[0]?.title || 'Update' });
+                        isFav = true; favBtn.className = 'fav-btn active'; favBtn.innerText = '✓ Tersimpan di Favorit';
+                    }
+                    saveCloudData();
+                };
+
+                let epsGrid = document.createElement('div');
+                epsGrid.className = 'eps-grid';
+                data.episodes?.forEach(eps => {
+                    let epSlug = eps.url ? eps.url.split('/').filter(Boolean).pop() : '';
+                    let badge = document.createElement('div');
+                    badge.className = 'eps-badge';
+                    badge.innerText = eps.title;
+                    badge.onclick = () => {
+                        if(currentUser) {
+                            userData.history = userData.history.filter(h => h.title !== data.title);
+                            userData.history.unshift({ title: data.title, url: `${API_URL}/api/anime/${slug}`, poster: data.poster, episode: eps.title });
+                            if(userData.history.length > 20) userData.history.pop();
+                            saveCloudData();
+                        }
+                        bukaEpisode(epSlug);
+                    };
+                    epsGrid.appendChild(badge);
+                });
+
+                body.innerHTML = `
+                    <img src="${data.poster || ''}" alt="${data.title}">
+                    <h2>${data.title}</h2>
+                    <p><strong>Sinopsis:</strong><br>${data.sinopsis || 'Tidak ada'}</p>
+                `;
+                body.appendChild(favBtn);
+                let epsList = document.createElement('div');
+                epsList.className = 'eps-list';
+                epsList.innerHTML = '<h4>Daftar Episode</h4>';
+                epsList.appendChild(epsGrid);
+                body.appendChild(epsList);
+            }
+        }
+
+        async function bukaEpisode(slug) {
+            let body = document.getElementById('modalBody');
+            body.innerHTML = '<p style="text-align:center; padding:20px;">Memuat link streaming...</p>';
+            let res = await fetch(`${API_URL}/api/episode/${slug}`);
+            let json = await res.json();
+            if(json.success) {
+                let ep = json.data;
+                let streamDiv = document.createElement('div');
+                streamDiv.style.marginTop = '15px';
+                if(ep.streams && Object.keys(ep.streams).length > 0) {
+                    streamDiv.innerHTML = '<h4>Pilih Resolusi:</h4>';
+                    let flex = document.createElement('div');
+                    flex.style.cssText = 'display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;';
+                    for(let [k, url] of Object.entries(ep.streams)) {
+                        let a = document.createElement('a');
+                        a.href = url; a.target = '_blank';
+                        a.innerText = k.split('_')[0];
+                        a.style.cssText = 'background:#00bcd4; color:#121212; padding:8px 15px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px;';
+                        flex.appendChild(a);
+                    }
+                    streamDiv.appendChild(flex);
+                } else {
+                    streamDiv.innerHTML = '<p style="color:#ff5252;">Link tidak tersedia.</p>';
+                }
+                body.innerHTML = `<h2>${ep.title}</h2>`;
+                body.appendChild(streamDiv);
+            }
+        }
+
+        function tutupModal() { document.getElementById('detailModal').style.display = 'none'; }
+
+        renderUserSection();
+        muatAnimeTerbaru();
+    </script>
+</body>
+</html>

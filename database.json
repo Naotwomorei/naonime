@@ -1,0 +1,30 @@
+{
+  "users": [
+    {
+      "email": "akuadminkamumemberyah@gmail.com",
+      "password": "adminlohyah",
+      "role": "admin",
+      "createdAt": "2026-10-05T16:05:05.045Z"
+    }
+  ],
+  "data": {
+    "akuadminkamumemberyah@gmail.com": {
+      "favorites": [],
+      "history": []
+    }
+  },
+  "profiles": {
+    "akuadminkamumemberyah@gmail.com": {
+      "avatar": "",
+      "banner": "",
+      "bio": "Admin Kumanime"
+    }
+  },
+  "friends": {
+    "akuadminkamumemberyah@gmail.com": {
+      "requests": [],
+      "list": []
+    }
+  },
+  "publicChat": []
+}
