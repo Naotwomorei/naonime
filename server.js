@@ -1,7 +1,7 @@
 /**
  * ==========================================
- * KURNANIME FULL PLATFORM SERVER (v2.0)
- * Auth (Gmail), Profiles, Public Chat, Nobar, Friends, Scraping
+ * NAONIME FULL PLATFORM SERVER (v2.1)
+ * Auth (Gmail login, Nickname public, Admin Lv.999), Profiles & Gallery Upload, Public Chat, Nobar, Friends, Scraping
  * ==========================================
  */
 
@@ -10,16 +10,27 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
+const multer = require('multer');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
+
+// Pastikan folder uploads ada untuk galeri avatar & banner
+if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
+  fs.mkdirSync(path.join(__dirname, 'uploads'), { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, path.join(__dirname, 'uploads')),
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+});
+const upload = multer({ storage: storage });
 
 const DB_FILE = path.join(__dirname, 'database.json');
 function readDB() {
@@ -28,7 +39,7 @@ function readDB() {
       users: [], 
       data: {}, 
       profiles: {}, 
-      friends: {}, // email -> { requests: [], list: [] }
+      friends: {}, 
       publicChat: [] 
     }, null, 2));
   }
@@ -70,48 +81,25 @@ class ApiResponse {
     if (details) response.details = details;
     return res.status(statusCode).json(response);
   }
-  static paginated(res, items, pagination, message = 'Success', statusCode = 200) {
-    return res.status(statusCode).json({ success: true, status: statusCode, message, data: { items, pagination }, timestamp: new Date().toISOString() });
-  }
-}
-
-class CookieJar {
-  constructor() { this.cookies = {}; }
-  update(headers) {
-    const setCookie = headers['set-cookie'];
-    if (!setCookie) return;
-    const cookies = Array.isArray(setCookie) ? setCookie : [setCookie];
-    for (const cookieStr of cookies) {
-      const parts = cookieStr.split(';')[0].split('=');
-      if (parts.length >= 2) {
-        this.cookies[parts[0].trim()] = parts.slice(1).join('=').trim();
-      }
-    }
-  }
-  getString() {
-    return Object.entries(this.cookies).map(([k, v]) => `${k}=${v}`).join('; ');
-  }
 }
 
 class RequestHandler {
   constructor() {
     this.uaIndex = 0;
-    this.cookieJar = new CookieJar();
+    this.cookieJar = {};
   }
   delay(min = config.delayMin, max = config.delayMax) {
     return new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * (max - min + 1)) + min));
   }
-  getHeaders(ref = config.baseUrl, cookie = '') {
+  getHeaders(ref = config.baseUrl) {
     const ua = config.userAgents[this.uaIndex++ % config.userAgents.length];
-    const headers = {
+    return {
       'User-Agent': ua,
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8',
       'Referer': ref || config.baseUrl,
       'Connection': 'keep-alive'
     };
-    if (cookie) headers['Cookie'] = cookie;
-    return headers;
   }
   async request(method, url, data = null, headers = {}, retries = config.retries) {
     let lastError = null;
@@ -125,7 +113,6 @@ class RequestHandler {
           maxRedirects: 5,
           validateStatus: status => status >= 200 && status < 400
         });
-        this.cookieJar.update(response.headers);
         return response;
       } catch (error) {
         lastError = error;
@@ -135,15 +122,14 @@ class RequestHandler {
     throw lastError;
   }
   async fetchHTML(url, retries = config.retries) {
-    const headers = this.getHeaders(url, this.cookieJar.getString());
-    const response = await this.request('GET', url, null, headers, retries);
+    const response = await this.request('GET', url, null, this.getHeaders(url), retries);
     return response.data;
   }
   async postAjax(payload, retries = config.retries) {
     const params = new URLSearchParams(payload);
     const url = `${config.baseUrl}/wp-admin/admin-ajax.php`;
     const headers = {
-      ...this.getHeaders(config.baseUrl, this.cookieJar.getString()),
+      ...this.getHeaders(config.baseUrl),
       'X-Requested-With': 'XMLHttpRequest',
       'Content-Type': 'application/x-www-form-urlencoded'
     };
@@ -157,33 +143,8 @@ class OtakudesuScraper {
     this.base = config.baseUrl;
     this.requestHandler = new RequestHandler();
   }
-
-  parsePagination($) {
-    const result = { current: 1, next: null, hasNext: false, total: null };
-    const pageLinks = [];
-    $('.pagination a, .pagination span, .page-numbers, .pagenavix a, .pagenavix span').each((i, el) => {
-      const href = $(el).attr('href');
-      const text = $(el).text().trim();
-      if (href) pageLinks.push({ text, href });
-    });
-    const numbers = pageLinks.filter(l => /^\d+$/.test(l.text)).map(l => parseInt(l.text));
-    if (numbers.length) result.total = Math.max(...numbers);
-    const current = $('.pagination .page-numbers.current, .pagenavix .page-numbers.current').first();
-    if (current.length && /^\d+$/.test(current.text().trim())) {
-      result.current = parseInt(current.text().trim());
-    }
-    if (result.total && result.current < result.total) {
-      result.hasNext = true;
-      const nextLink = pageLinks.find(l => l.text === 'Next' || l.text === '»');
-      if (nextLink && nextLink.href) {
-        result.next = nextLink.href.startsWith('http') ? nextLink.href : this.base + nextLink.href;
-      }
-    }
-    return result;
-  }
-
   parseCardDetpost($, element) {
-    const $el = $(element);
+    const $el =$(element);
     const link = $el.find('.thumb a').attr('href');
     const title = $el.find('.jdlflm').text().trim();
     if (!link || !title) return null;
@@ -192,30 +153,22 @@ class OtakudesuScraper {
       url: link.startsWith('http') ? link : this.base + link,
       poster: $el.find('.thumbz img').attr('src') || null,
       episode: $el.find('.epz').text().trim() || null,
-      day: $el.find('.epztipe').text().trim() || null,
-      date: $el.find('.newnime').text().trim() || null
+      status: $el.find('.epztipe').text().trim() || null
     };
   }
-
   parseEpisodeList($) {
     const episodes = [];
     $('.episodelist ul li').each((i, el) => {
-      const $a = $(el).find('a');
+      const $a =$(el).find('a');
       const title = $a.text().trim();
       const href = $a.attr('href');
       if (href && title) {
         const match = href.match(/\/episode\/([^\/]+)\/?$/);
-        episodes.push({
-          title,
-          episodeId: match ? match[1] : null,
-          url: href.startsWith('http') ? href : this.base + href,
-          releaseDate: $(el).find('.zeebr').text().trim() || null
-        });
+        episodes.push({ title, url: href.startsWith('http') ? href : this.base + href });
       }
     });
     return episodes;
   }
-
   extractPostId($) {
     const ids = new Set();
     $('[data-content]').each((i, el) => {
@@ -226,14 +179,12 @@ class OtakudesuScraper {
     });
     return ids.size > 0 ? [...ids][0] : null;
   }
-
   async getNonce() {
     try {
       const res = await this.requestHandler.postAjax({ action: 'aa1208d27f29ca340c92c66d1926f13f' });
       return res?.data || null;
     } catch (e) { return null; }
   }
-
   async getStreamUrl(postId, index, quality, nonce) {
     try {
       const res = await this.requestHandler.postAjax({
@@ -245,7 +196,6 @@ class OtakudesuScraper {
       return cheerio.load(html)('iframe').attr('src') || null;
     } catch (e) { return null; }
   }
-
   async extractStreams(html) {
     const $ = cheerio.load(html);
     const postId = this.extractPostId($);
@@ -255,7 +205,7 @@ class OtakudesuScraper {
 
     const streams = {};
     $('.mirrorstream ul a').each((j, a) => {
-      const $a = $(a);
+      const $a =$(a);
       const dataContent = $a.attr('data-content');
       if (dataContent) {
         try {
@@ -274,7 +224,6 @@ class OtakudesuScraper {
     }
     return result;
   }
-
   async home() {
     const $ = cheerio.load(await this.requestHandler.fetchHTML(this.base + '/'));
     const items = [];
@@ -284,12 +233,11 @@ class OtakudesuScraper {
     });
     return { items };
   }
-
   async search(query) {
     const $ = cheerio.load(await this.requestHandler.fetchHTML(`${this.base}/?s=${encodeURIComponent(query)}&post_type=anime`));
     const items = [];
     $('.chivsrc li').each((i, el) => {
-      const $el = $(el);
+      const $el =$(el);
       const link = $el.find('h2 a').attr('href');
       const title = $el.find('h2 a').text().trim();
       if (link && title) {
@@ -297,14 +245,12 @@ class OtakudesuScraper {
           title,
           url: link.startsWith('http') ? link : this.base + link,
           poster: $el.find('img').attr('src') || null,
-          genres: $el.find('.set:first-child a').map((_, a) => $(a).text()).get() || [],
           status: $el.find('.set:nth-child(2)').text().replace('Status :', '').trim() || null
         });
       }
     });
     return { query, items };
   }
-
   async detail(slug) {
     const $ = cheerio.load(await this.requestHandler.fetchHTML(`${this.base}/anime/${slug}/`));
     return {
@@ -314,7 +260,6 @@ class OtakudesuScraper {
       episodes: this.parseEpisodeList($)
     };
   }
-
   async episode(slug) {
     const html = await this.requestHandler.fetchHTML(`${this.base}/episode/${slug}/`);
     const $ = cheerio.load(html);
@@ -330,15 +275,17 @@ const scraper = new OtakudesuScraper();
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" }, contentSecurityPolicy: false }));
 app.use(cors({ origin: '*' }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// --- API AUTH ---
+// --- API AUTH (GMAIL LOGIN & NICKNAME PUBLIC) ---
 app.post('/api/auth/register', (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, nickname } = req.body;
   if (!email || !password || !email.endsWith('@gmail.com')) {
     return ApiResponse.error(res, 'Gunakan alamat Gmail yang valid (@gmail.com)', 400);
   }
@@ -346,64 +293,103 @@ app.post('/api/auth/register', (req, res) => {
   if (db.users.some(u => u.email === email)) {
     return ApiResponse.error(res, 'Gmail sudah terdaftar', 400);
   }
-  const role = (email === ADMIN_EMAIL) ? 'admin' : 'user';
-  db.users.push({ email, password, role, createdAt: new Date().toISOString() });
-  db.data[email] = { favorites: [], history: [] };
-  db.profiles[email] = {
-    avatar: 'https://via.placeholder.com/150?text=Avatar',
-    banner: 'https://via.placeholder.com/600x200?text=Banner',
-    bio: 'Penggemar anime setia Kumanime.'
+  const isAdmin = (email === ADMIN_EMAIL);
+  const user = { 
+    email, 
+    password, 
+    nickname: nickname || email.split('@')[0], 
+    role: isAdmin ? 'admin' : 'user',
+    level: isAdmin ? 999 : 1,
+    xp: 0,
+    createdAt: new Date().toISOString() 
   };
+  db.users.push(user);
+  db.data[email] = { favorites: [], history: [] };
+  db.profiles[email] = { avatar: '', banner: '', bio: 'Penggemar anime Naonime.' };
   db.friends[email] = { requests: [], list: [] };
   writeDB(db);
-  ApiResponse.success(res, { email, role }, 'Registrasi berhasil');
+  ApiResponse.success(res, { email, nickname: user.nickname, level: user.level }, 'Registrasi berhasil');
 });
 
 app.post('/api/auth/login', (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, nickname } = req.body;
   if (!email || !password) return ApiResponse.error(res, 'Gmail dan password wajib diisi', 400);
   const db = readDB();
   let user = db.users.find(u => u.email === email && u.password === password);
   
   if (!user && email === ADMIN_EMAIL) {
-    user = { email, password, role: 'admin', createdAt: new Date().toISOString() };
+    user = { email, password, nickname: nickname || 'Admin Naonime', role: 'admin', level: 999, xp: 9999, createdAt: new Date().toISOString() };
     db.users.push(user);
     if (!db.data[email]) db.data[email] = { favorites: [], history: [] };
-    if (!db.profiles[email]) db.profiles[email] = { avatar: '', banner: '', bio: 'Admin Kumanime' };
+    if (!db.profiles[email]) db.profiles[email] = { avatar: '', banner: '', bio: 'Admin Naonime' };
     if (!db.friends[email]) db.friends[email] = { requests: [], list: [] };
     writeDB(db);
   }
 
   if (!user) return ApiResponse.error(res, 'Gmail atau password salah', 401);
-  const role = (email === ADMIN_EMAIL) ? 'admin' : (user.role || 'user');
-  ApiResponse.success(res, { email, role }, 'Login berhasil');
+  if (email === ADMIN_EMAIL) {
+    user.level = 999;
+    user.role = 'admin';
+  }
+  writeDB(db);
+
+  ApiResponse.success(res, { 
+    email: user.email, 
+    nickname: user.nickname, 
+    level: user.level, 
+    role: user.role,
+    favorites: db.data[email]?.favorites || [],
+    history: db.data[email]?.history || [],
+    profile: db.profiles[email] || {},
+    friends: db.friends[email] || {}
+  }, 'Login berhasil');
 });
 
-// --- API USER DATA & PROFILE ---
+// --- API USER DATA & PROFILE GALLERY UPLOAD ---
 app.get('/api/user/:email/data', (req, res) => {
   const { email } = req.params;
   const db = readDB();
+  const user = db.users.find(u => u.email === email) || { level: email === ADMIN_EMAIL ? 999 : 1, nickname: email.split('@')[0] };
+  if (email === ADMIN_EMAIL) user.level = 999;
+  
   if (!db.data[email]) db.data[email] = { favorites: [], history: [] };
   if (!db.profiles[email]) db.profiles[email] = { avatar: '', banner: '', bio: '' };
   if (!db.friends[email]) db.friends[email] = { requests: [], list: [] };
-  const role = (email === ADMIN_EMAIL) ? 'admin' : 'user';
+
   ApiResponse.success(res, { 
     ...db.data[email], 
+    nickname: user.nickname,
+    level: user.level,
+    role: user.role || (email === ADMIN_EMAIL ? 'admin' : 'user'),
     profile: db.profiles[email],
-    friends: db.friends[email],
-    role 
+    friends: db.friends[email]
   }, 'Data user dimuat');
 });
 
 app.post('/api/user/:email/data', (req, res) => {
   const { email } = req.params;
-  const { favorites, history, profile } = req.body;
+  const { favorites, history } = req.body;
   const db = readDB();
   if (favorites) db.data[email].favorites = favorites;
   if (history) db.data[email].history = history;
-  if (profile) db.profiles[email] = profile;
   writeDB(db);
   ApiResponse.success(res, db.data[email], 'Data berhasil disimpan');
+});
+
+app.post('/api/user/profile/update', upload.fields([{ name: 'avatar', maxCount: 1 }, { name: 'banner', maxCount: 1 }]), (req, res) => {
+  const { email, bio } = req.body;
+  const db = readDB();
+  if (!db.profiles[email]) db.profiles[email] = { avatar: '', banner: '', bio: '' };
+
+  if (bio !== undefined) db.profiles[email].bio = bio;
+  if (req.files['avatar']) {
+    db.profiles[email].avatar = `/uploads/${req.files['avatar'][0].filename}`;
+  }
+  if (req.files['banner']) {
+    db.profiles[email].banner = `/uploads/${req.files['banner'][0].filename}`;
+  }
+  writeDB(db);
+  ApiResponse.success(res, db.profiles[email], 'Profil berhasil diperbarui');
 });
 
 // --- API FRIENDS SYSTEM ---
@@ -438,19 +424,16 @@ app.post('/api/friends/accept', (req, res) => {
   ApiResponse.success(res, {}, 'Pertemanan diterima');
 });
 
-app.get('/api/users/all', (req, res) => {
-  const db = readDB();
-  const list = db.users.map(u => ({
-    email: u.email,
-    profile: db.profiles[u.email] || {}
-  }));
-  ApiResponse.success(res, list, 'Semua user');
-});
-
 // --- API ADMIN ---
 app.get('/api/admin/users', (req, res) => {
   const db = readDB();
-  ApiResponse.success(res, db.users.map(u => ({ email: u.email, role: u.role, createdAt: u.createdAt })), 'Daftar user');
+  const list = db.users.map(u => ({
+    email: u.email,
+    nickname: u.nickname,
+    level: u.email === ADMIN_EMAIL ? 999 : (u.level || 1),
+    role: u.role
+  }));
+  ApiResponse.success(res, list, 'Daftar user');
 });
 
 // --- API ANIME ---
@@ -467,11 +450,8 @@ app.get('/api/episode/:slug', async (req, res, next) => {
   try { ApiResponse.success(res, await scraper.episode(req.params.slug), 'Episode fetched'); } catch (e) { next(e); }
 });
 
-// --- SOCKET.IO (PUBLIC CHAT & NOBAR ROOMS - MAX 5 USERS) ---
+// --- SOCKET.IO (PUBLIC CHAT DENGAN LEVELING OTOMATIS & NOBAR) ---
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
-
-  // Public Chat
   socket.on('load_public_chat', () => {
     const db = readDB();
     socket.emit('public_chat_history', db.publicChat);
@@ -479,7 +459,28 @@ io.on('connection', (socket) => {
 
   socket.on('send_public_message', (msg) => {
     const db = readDB();
-    const chatItem = { email: msg.email, text: msg.text, time: new Date().toLocaleTimeString() };
+    let user = db.users.find(u => u.email === msg.email);
+    let nickname = user ? user.nickname : (msg.email ? msg.email.split('@')[0] : 'Anonim');
+    let level = msg.email === ADMIN_EMAIL ? 999 : (user ? (user.level || 1) : 1);
+
+    // Tambah XP / Level untuk member via chat publik
+    if (user && msg.email !== ADMIN_EMAIL) {
+      user.xp = (user.xp || 0) + 15;
+      if (user.xp >= level * 100) {
+        user.level = (user.level || 1) + 1;
+      }
+      level = user.level;
+      writeDB(db);
+    }
+
+    let badge = level === 999 ? '👑 ADMIN Lv.999' : `Lv.${level}`;
+    const chatItem = { 
+      nickname, 
+      badge, 
+      text: msg.text, 
+      time: new Date().toLocaleTimeString() 
+    };
+
     db.publicChat.push(chatItem);
     if (db.publicChat.length > 100) db.publicChat.shift();
     writeDB(db);
@@ -495,20 +496,11 @@ io.on('connection', (socket) => {
       return;
     }
     socket.join(roomCode);
-    socket.to(roomCode).emit('nobar_notification', `${email} bergabung ke room Nobar.`);
     socket.emit('nobar_joined', roomCode);
-  });
-
-  socket.on('nobar_action', ({ roomCode, action, data }) => {
-    socket.to(roomCode).emit('nobar_sync', { action, data });
-  });
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
   });
 });
 
 const PORT = config.port;
 server.listen(PORT, () => {
-  console.log(`Kumanime Platform running on http://localhost:${PORT}`);
+  console.log(`Naonime Platform running on port ${PORT}`);
 });
