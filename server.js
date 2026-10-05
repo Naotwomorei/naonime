@@ -49,7 +49,7 @@ function writeDB(db) {
 const ADMIN_EMAIL = 'akuadminkamumemberyah@gmail.com';
 
 const config = {
-  port: process.env.PORT || 3000,
+  port: process.env.PORT || 80,
   baseUrl: process.env.BASE_URL || 'https://otakudesu.blog',
   userAgents: [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
