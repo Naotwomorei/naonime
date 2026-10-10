@@ -5,12 +5,146 @@
       "password": "adminlohyah",
       "role": "admin",
       "createdAt": "2026-10-05T16:05:05.045Z"
+    },
+    {
+      "email": "allingame177@gmail.com",
+      "password": "bebas",
+      "nickname": "Tomori",
+      "role": "user",
+      "level": 1,
+      "xp": 0,
+      "createdAt": "2026-10-06T05:40:28.636Z"
+    },
+    {
+      "email": "ielfach0107@gmail.com",
+      "password": "bebas",
+      "nickname": "Tomori",
+      "role": "user",
+      "level": 1,
+      "xp": 15,
+      "createdAt": "2026-10-08T10:39:07.978Z"
     }
   ],
   "data": {
     "akuadminkamumemberyah@gmail.com": {
       "favorites": [],
       "history": []
+    },
+    "allingame177@gmail.com": {
+      "favorites": [],
+      "history": [
+        {
+          "title": "Chii Fuyo Subtitle Indonesia",
+          "url": "https://otakudesu.blog/anime/chii-fuyo-sub-indo/",
+          "poster": "https://otakudesu.blog/wp-content/uploads/2026/10/160339.jpg",
+          "episode": "Chii Fuyo Episode 1 Subtitle Indonesia",
+          "source": "otakudesu"
+        },
+        {
+          "title": "Sora wa Akai Kawa no Hotori Subtitle Indonesia",
+          "url": "https://otakudesu.blog/anime/sora-akai-kawa-hotori-sub-indo/",
+          "poster": "https://otakudesu.blog/wp-content/uploads/2026/07/Sora-wa-Akai-Kawa-no-Hotori-Sub.jpg",
+          "episode": "Sora wa Akai Kawa no Hotori Episode 12 Subtitle Indonesia",
+          "source": "otakudesu"
+        }
+      ]
+    },
+    "ielfach0107@gmail.com": {
+      "favorites": [
+        {
+          "title": "Keyboard Immortal",
+          "url": "/keyboard-immortal-episode-33-subtitle-indonesia/",
+          "poster": "https://anichin.moe/wp-content/uploads/2024/06/Keyboard-Immortal-Subtitle-Indonesia.webp",
+          "episode": "Update",
+          "source": "anichin"
+        },
+        {
+          "title": "Shin Tennis no Oujisama: U-17 World Cup – Kesshou Member Ketteisen Sub Indo",
+          "url": "https://otakudesu.blog/anime/shin-u-17-world-cup-sub-indo/",
+          "poster": "https://otakudesu.blog/wp-content/uploads/2026/10/159518.jpg",
+          "episode": "Shin Tennis no Oujisama: U-17 World Cup – Kesshou Member Ketteisen Episode 2 Subtitle Indonesia",
+          "source": "otakudesu"
+        }
+      ],
+      "history": [
+        {
+          "title": "Otaku ni Yasashii Gal wa Inai!? Sub Indo",
+          "url": "https://otakudesu.blog/anime/otaku-yasashii-gal-inai-sub-indo/",
+          "poster": "https://otakudesu.blog/wp-content/uploads/2026/04/otaku-ni-yasashii-gal-wa-inai-0044e17a044b4096940344b888dc701e.jpg",
+          "episode": "Update",
+          "source": "otakudesu"
+        },
+        {
+          "title": "Keyboard Immortal Episode 33 Subtitle Indonesia",
+          "url": "/keyboard-immortal-episode-33-subtitle-indonesia/",
+          "poster": "https://anichin.moe/wp-content/uploads/2024/06/Keyboard-Immortal-Subtitle-Indonesia.webp",
+          "episode": "Ep 33",
+          "source": "anichin"
+        },
+        {
+          "title": "Neko to Ryuu",
+          "url": "https://otakudesu.blog/anime/neko-ryuu-sub-indo/",
+          "poster": "https://otakudesu.blog/wp-content/uploads/2026/09/Neko-to-Ryuu-Sub-Indo.jpg",
+          "episode": "12 Episode",
+          "source": "otakudesu"
+        },
+        {
+          "title": "Koori no Jouheki Season 2",
+          "url": "https://otakudesu.blog/anime/koori-jouheki-s2-sub-indo/",
+          "poster": "https://otakudesu.blog/wp-content/uploads/2026/10/159754.jpg",
+          "episode": "Episode 2",
+          "source": "otakudesu"
+        },
+        {
+          "title": "Kusuriya no Hitorigoto Season 3",
+          "url": "https://otakudesu.blog/anime/kusuriya-hitorigoto-s3-sub-indo/",
+          "poster": "https://otakudesu.blog/wp-content/uploads/2026/10/160277-1.jpg",
+          "episode": "Episode 2",
+          "source": "otakudesu"
+        },
+        {
+          "title": "Toaru Anbu no Item",
+          "url": "https://otakudesu.blog/anime/toaru-anbu-item-sub-indo/",
+          "poster": "https://otakudesu.blog/wp-content/uploads/2026/10/159988.jpg",
+          "episode": "Episode 1",
+          "source": "otakudesu"
+        },
+        {
+          "title": "Star Wars: The Force Awakens (2015)",
+          "url": "https://tv9.gf21.fun/movies/star-wars-the-force-awakens-2015/",
+          "poster": "https://image.tmdb.org/t/p/w92/wqnLdwVXoBjKibFRR5U3y0aDUhs.jpg",
+          "episode": "HD",
+          "source": "film"
+        },
+        {
+          "title": "The Uprising (2026)",
+          "url": "https://tv9.gf21.fun/movies/the-uprising-2026/",
+          "poster": "data:image/gif;base64,R0lGODdhAQABAPAAAMPDwwAAACwAAAAAAQABAAACAkQBADs=",
+          "episode": "HD",
+          "source": "film"
+        },
+        {
+          "title": "Shin Tennis no Oujisama: U-17 World Cup - Kesshou Member Ketteisen",
+          "url": "https://otakudesu.blog/anime/shin-u-17-world-cup-sub-indo/",
+          "poster": "https://otakudesu.blog/wp-content/uploads/2026/10/159518.jpg",
+          "episode": "Episode 2",
+          "source": "otakudesu"
+        },
+        {
+          "title": "Sasaki to Pii-chan Season 2",
+          "url": "https://otakudesu.blog/anime/sasaki-pii-chan-s2-sub-indo/",
+          "poster": "https://otakudesu.blog/wp-content/uploads/2026/10/159979.jpg",
+          "episode": "Episode 1",
+          "source": "otakudesu"
+        },
+        {
+          "title": "Kikansha no Mahou wa Tokubetsu desu Season 2",
+          "url": "https://otakudesu.blog/anime/kikansha-mahou-tokubetsu-s2-sub-indo/",
+          "poster": "https://otakudesu.blog/wp-content/uploads/2026/10/160052.jpg",
+          "episode": "Episode 1",
+          "source": "otakudesu"
+        }
+      ]
     }
   },
   "profiles": {
@@ -18,13 +152,38 @@
       "avatar": "",
       "banner": "",
       "bio": "Admin Kumanime"
+    },
+    "allingame177@gmail.com": {
+      "avatar": "",
+      "banner": "",
+      "bio": "Penggemar anime Naonime."
+    },
+    "ielfach0107@gmail.com": {
+      "avatar": "",
+      "banner": "",
+      "bio": "Penggemar anime Naonime."
     }
   },
   "friends": {
     "akuadminkamumemberyah@gmail.com": {
       "requests": [],
       "list": []
+    },
+    "allingame177@gmail.com": {
+      "requests": [],
+      "list": []
+    },
+    "ielfach0107@gmail.com": {
+      "requests": [],
+      "list": []
     }
   },
-  "publicChat": []
+  "publicChat": [
+    {
+      "nickname": "Tomori",
+      "badge": "Lv.1",
+      "text": "halow",
+      "time": "1:10:23 AM"
+    }
+  ]
 }

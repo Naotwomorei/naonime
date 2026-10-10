@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NAONIME - Streaming & Social Platform</title>
+    <title>NAONIME - Streaming Anime, Donghua, Manga & Film</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -21,7 +21,6 @@
         button:hover { background-color: #008ba3; }
         .btn-secondary { background-color: #333; color: #fff; }
         .btn-secondary:hover { background-color: #444; }
-        .btn-admin { background-color: #ff9800; color: #121212; }
         
         .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; }
         .section-title { font-size: 20px; margin-bottom: 15px; border-left: 4px solid #00bcd4; padding-left: 10px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
@@ -32,31 +31,28 @@
         .card img { width: 100%; height: 250px; object-fit: cover; }
         .card-content { padding: 12px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; }
         .card h3 { font-size: 14px; margin-bottom: 8px; color: #fff; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .badge { font-size: 11px; background: #333; color: #00bcd4; padding: 3px 6px; border-radius: 3px; align-self: flex-start; }
+        .badge { font-size: 11px; background: #333; color: #00bcd4; padding: 3px 6px; border-radius: 3px; align-self: flex-start; text-transform: uppercase; }
         
         .loading { text-align: center; grid-column: 1 / -1; padding: 40px; font-size: 18px; color: #888; }
         
-        /* Modal */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: #1f1f1f; width: 90%; max-width: 750px; max-height: 85vh; border-radius: 8px; overflow-y: auto; padding: 20px; position: relative; }
-        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa; }
-        .close-btn:hover { color: #fff; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: #1f1f1f; width: 90%; max-width: 800px; max-height: 85vh; border-radius: 8px; overflow-y: auto; padding: 20px; position: relative; }
         
-        /* Profile & Social UI */
-        .profile-banner { width: 100%; height: 150px; background-size: cover; background-position: center; border-radius: 6px; margin-bottom: 45px; position: relative; }
-        .profile-avatar { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #00bcd4; position: absolute; bottom: -35px; left: 20px; background: #111; }
-        .profile-info { padding: 0 20px; margin-bottom: 20px; }
-        
-        /* Chat & Nobar UI */
-        .chat-box { height: 300px; border: 1px solid #333; background: #161616; border-radius: 6px; overflow-y: auto; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .chat-msg { font-size: 13px; background: #222; padding: 6px 10px; border-radius: 4px; }
-        .chat-msg span { color: #00bcd4; font-weight: bold; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; position: relative; z-index: 2010; }
+        .modal-header h2 { font-size: 18px; color: #fff; flex-grow: 1; line-height: 1.4; word-break: break-word; }
+        .close-btn { background: #ff5252; color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; z-index: 2020; transition: 0.2s; }
+        .close-btn:hover { background: #ff1744; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
         th, td { border: 1px solid #333; padding: 8px 12px; text-align: left; }
         th { background: #2a2a2a; color: #00bcd4; }
         .fav-btn { background: #ff5252; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; margin-top: 10px; }
         .fav-btn.active { background: #4caf50; }
+        .chat-box { height: 350px; overflow-y: auto; background: #121212; padding: 15px; border-radius: 6px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .chat-msg { background: #2a2a2a; padding: 8px 12px; border-radius: 6px; font-size: 13px; }
+        .chat-msg span { color: #00bcd4; font-weight: bold; }
+        .profile-banner { width: 100%; height: 150px; background-size: cover; background-position: center; border-radius: 6px; position: relative; margin-bottom: 50px; }
+        .profile-avatar { width: 90px; height: 90px; border-radius: 50%; border: 3px solid #00bcd4; object-fit: cover; position: absolute; bottom: -45px; left: 20px; background: #222; }
     </style>
 </head>
 <body>
@@ -64,18 +60,21 @@
     <header>
         <div class="logo" id="logoBtn">NAONIME</div>
         <div class="nav-links">
-            <a class="nav-link active" id="homeNav">Beranda</a>
+            <a class="nav-link active" id="homeNav">Anime</a>
+            <a class="nav-link" id="donghuaNav">Donghua</a>
+            <a class="nav-link" id="mangaNav">Manga/Manhwa</a>
+            <a class="nav-link" id="filmNav">Film</a>
             <a class="nav-link" id="favNav">Favorit</a>
             <a class="nav-link" id="historyNav">Riwayat</a>
-            <a class="nav-link" id="chatNav">Public Chat</a>
-            <a class="nav-link" id="nobarNav">Nobar (5 User)</a>
+            <a class="nav-link" id="chatNav">Global Chat</a>
+            <a class="nav-link" id="nobarNav">Nobar</a>
             <a class="nav-link" id="friendNav">Teman</a>
-            <a class="nav-link" id="profileNav">Profil Saya</a>
-            <a class="nav-link" id="adminNav" style="display:none; color: #ff9800;">Panel Admin</a>
+            <a class="nav-link" id="profileNav">Profil</a>
+            <a class="nav-link" id="adminNav" style="display:none; color: #ff9800;">Admin</a>
         </div>
         <div class="user-section" id="userSection"></div>
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Cari anime...">
+            <input type="text" id="searchInput" placeholder="Cari anime, donghua, manga...">
             <button id="searchBtn">Cari</button>
         </div>
     </header>
@@ -83,14 +82,16 @@
     <div class="container">
         <h2 class="section-title" id="sectionTitle">Anime Terbaru</h2>
         <div id="animeContainer" class="grid">
-            <div class="loading">Memuat data Naonime...</div>
+            <div class="loading">Memuat Naonime...</div>
         </div>
     </div>
 
-    <!-- Modal Utama -->
     <div id="detailModal" class="modal">
         <div class="modal-content">
-            <span class="close-btn" id="closeModalBtn">&times;</span>
+            <div class="modal-header">
+                <h2 id="modalTitle">Judul Modal</h2>
+                <button class="close-btn" id="closeModalBtn" onclick="tutupModal()">&times;</button>
+            </div>
             <div id="modalBody"></div>
         </div>
     </div>
@@ -98,35 +99,40 @@
     <script>
         const socket = io();
         const API_URL = '';
-        let currentView = 'home';
         let currentUserEmail = localStorage.getItem('naonime_email') || null;
         let userData = { favorites: [], history: [], profile: { avatar: '', banner: '', bio: '' }, friends: { requests: [], list: [] } };
 
-        // DOM Listeners
         document.getElementById('logoBtn').addEventListener('click', () => { switchView('home'); muatAnimeTerbaru(); });
         document.getElementById('homeNav').addEventListener('click', () => { switchView('home'); muatAnimeTerbaru(); });
+        document.getElementById('donghuaNav').addEventListener('click', () => { switchView('donghua'); muatDonghuaTerbaru(); });
+        document.getElementById('mangaNav').addEventListener('click', () => { switchView('manga'); muatMenuManga(); });
+        document.getElementById('filmNav').addEventListener('click', () => { switchView('film'); muatFilmTerbaru(); });
         document.getElementById('favNav').addEventListener('click', () => { checkAuth(() => { switchView('fav'); tampilkanGrid(userData.favorites, 'Daftar Favorit Saya'); }); });
-        document.getElementById('historyNav').addEventListener('click', () => { checkAuth(() => { switchView('history'); tampilkanGrid(userData.history, 'Riwayat Tontonan'); }); });
+        document.getElementById('historyNav').addEventListener('click', () => { checkAuth(() => { switchView('history'); tampilkanGrid(userData.history, 'Riwayat Tontonan & Bacaan'); }); });
         document.getElementById('chatNav').addEventListener('click', () => { checkAuth(bukaPublicChat); });
         document.getElementById('nobarNav').addEventListener('click', () => { checkAuth(bukaNobarLobby); });
         document.getElementById('friendNav').addEventListener('click', () => { checkAuth(bukaMenuTeman); });
         document.getElementById('profileNav').addEventListener('click', () => { checkAuth(bukaProfilSaya); });
         document.getElementById('adminNav').addEventListener('click', bukaPanelAdmin);
-        document.getElementById('searchBtn').addEventListener('click', cariAnime);
-        document.getElementById('searchInput').addEventListener('keypress', e => { if(e.key==='Enter') cariAnime(); });
-        document.getElementById('closeModalBtn').addEventListener('click', tutupModal);
+        document.getElementById('searchBtn').addEventListener('click', cariGlobal);
+        document.getElementById('searchInput').addEventListener('keypress', e => { if(e.key==='Enter') cariGlobal(); });
+        
+        window.addEventListener('click', e => { 
+            let modal = document.getElementById('detailModal');
+            if(e.target === modal) tutupModal(); 
+        });
 
-        window.addEventListener('click', e => { if(e.target === document.getElementById('detailModal')) tutupModal(); });
+        function tutupModal() { 
+            let modal = document.getElementById('detailModal');
+            if(modal) modal.style.display = 'none'; 
+        }
 
         async function syncDataCloud() {
             if(!currentUserEmail) return;
             try {
                 let res = await fetch(`${API_URL}/api/user/${currentUserEmail}/data`);
                 let json = await res.json();
-                if(json.success) {
-                    userData = json.data;
-                    updateAdminNav();
-                }
+                if(json.success) { userData = json.data; updateAdminNav(); }
             } catch(e) {}
         }
 
@@ -149,7 +155,7 @@
             let sec = document.getElementById('userSection');
             updateAdminNav();
             if(currentUserEmail) {
-                let badge = userData.level === 999 ? '👑 [ADMIN Lv.999]' : `Lv.${userData.level || 1}`;
+                let badge = userData.level === 999 ? '👑 [Admin]' : `Lv.${userData.level || 1}`;
                 sec.innerHTML = `
                     <span style="font-size:12px; color:${userData.level===999?'#ff9800':'#00bcd4'}; font-weight:bold;">${userData.nickname || currentUserEmail} (${badge})</span>
                     <button class="btn-secondary" id="logoutBtn" style="padding:4px 8px; font-size:11px;">Keluar</button>
@@ -168,42 +174,36 @@
             }
         }
 
-        function checkAuth(cb) {
-            if(!currentUserEmail) bukaModalAuth();
-            else cb();
-        }
+        function checkAuth(cb) { if(!currentUserEmail) bukaModalAuth(); else cb(); }
 
         function bukaModalAuth() {
             let modal = document.getElementById('detailModal');
+            document.getElementById('modalTitle').innerText = 'Akun Naonime';
             let body = document.getElementById('modalBody');
             modal.style.display = 'flex';
             body.innerHTML = `
-                <div class="auth-form" style="display:flex; flex-direction:column; gap:12px; max-width:320px; margin:20px auto;">
-                    <h3 style="color:#00bcd4; text-align:center;">Akun Naonime</h3>
-                    <input type="email" id="authEmail" placeholder="nama@gmail.com (Email Login)">
-                    <input type="text" id="authNickname" placeholder="Nickname Publik (Nama Tampil)">
-                    <input type="password" id="authPassword" placeholder="Kata sandi bebas">
+                <div style="display:flex; flex-direction:column; gap:12px; max-width:320px; margin:20px auto;">
+                    <input type="email" id="authEmail" placeholder="nama@gmail.com (Email)">
+                    <input type="text" id="authNickname" placeholder="Nickname Publik (Opsional)">
+                    <input type="password" id="authPassword" placeholder="Password bebas">
                     <button id="doLogin">Masuk</button>
-                    <button class="btn-secondary" id="doRegister">Daftar Akun</button>
+                    <button class="btn-secondary" id="doRegister">Daftar</button>
                     <p id="authMsg" style="color:#ff5252; font-size:12px; text-align:center;"></p>
                 </div>
             `;
-            document.getElementById('doLogin').addEventListener('click', async () => {
+            document.getElementById('doLogin').onclick = async () => {
                 let email = document.getElementById('authEmail').value.trim();
                 let password = document.getElementById('authPassword').value.trim();
                 let nickname = document.getElementById('authNickname').value.trim();
                 let res = await fetch(`${API_URL}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, password, nickname}) });
                 let json = await res.json();
                 if(json.success) {
-                    currentUserEmail = json.data.email;
-                    userData = json.data;
+                    currentUserEmail = json.data.email; userData = json.data;
                     localStorage.setItem('naonime_email', currentUserEmail);
-                    tutupModal();
-                    renderUserSection();
-                    muatAnimeTerbaru();
+                    tutupModal(); renderUserSection(); muatAnimeTerbaru();
                 } else { document.getElementById('authMsg').innerText = json.message; }
-            });
-            document.getElementById('doRegister').addEventListener('click', async () => {
+            };
+            document.getElementById('doRegister').onclick = async () => {
                 let email = document.getElementById('authEmail').value.trim();
                 let password = document.getElementById('authPassword').value.trim();
                 let nickname = document.getElementById('authNickname').value.trim();
@@ -213,221 +213,18 @@
                     document.getElementById('authMsg').style.color = '#4caf50';
                     document.getElementById('authMsg').innerText = 'Registrasi berhasil! Silakan Masuk.';
                 } else { document.getElementById('authMsg').innerText = json.message; }
-            });
-        }
-
-        // --- PUBLIC CHAT ---
-        function bukaPublicChat() {
-            switchView('chat');
-            document.getElementById('sectionTitle').innerText = 'Public Chat Global';
-            let container = document.getElementById('animeContainer');
-            container.style.display = 'block';
-            container.innerHTML = `
-                <div style="max-width:700px; margin:0 auto; background:#1f1f1f; padding:20px; border-radius:8px;">
-                    <h3>💬 Ruang Obrolan Publik Naonime</h3>
-                    <p style="font-size:12px; color:#aaa; margin-bottom:15px;">Ngobrol santai. Chat publik menambah XP & Level member!</p>
-                    <div class="chat-box" id="publicChatBox"></div>
-                    <div style="display:flex; gap:10px;">
-                        <input type="text" id="chatInput" placeholder="Tulis pesan..." style="flex-grow:1;">
-                        <button id="sendChatBtn">Kirim</button>
-                    </div>
-                </div>
-            `;
-            socket.emit('load_public_chat');
-            socket.off('public_chat_history');
-            socket.off('new_public_message');
-
-            socket.on('public_chat_history', msgs => {
-                let box = document.getElementById('publicChatBox');
-                box.innerHTML = msgs.map(m => `<div class="chat-msg"><span style="color:#ffcc00;">[${m.badge}]</span> <span>${m.nickname}</span>: ${m.text}</div>`).join('');
-                box.scrollTop = box.scrollHeight;
-            });
-            socket.on('new_public_message', m => {
-                let box = document.getElementById('publicChatBox');
-                box.innerHTML += `<div class="chat-msg"><span style="color:#ffcc00;">[${m.badge}]</span> <span>${m.nickname}</span>: ${m.text}</div>`;
-                box.scrollTop = box.scrollHeight;
-            });
-
-            document.getElementById('sendChatBtn').onclick = () => {
-                let input = document.getElementById('chatInput');
-                let text = input.value.trim();
-                if(text) {
-                    socket.emit('send_public_message', { email: currentUserEmail, text });
-                    input.value = '';
-                }
             };
-            document.getElementById('chatInput').onkeypress = e => { if(e.key==='Enter') document.getElementById('sendChatBtn').click(); };
-        }
-
-        // --- NOBAR (WATCH PARTY - MAX 5 USERS) ---
-        function bukaNobarLobby() {
-            switchView('nobar');
-            document.getElementById('sectionTitle').innerText = 'Nobar Room (Maks 5 User)';
-            let container = document.getElementById('animeContainer');
-            container.style.display = 'block';
-            container.innerHTML = `
-                <div style="max-width:600px; margin:0 auto; background:#1f1f1f; padding:30px; border-radius:8px; text-align:center;">
-                    <h3 style="color:#00bcd4; margin-bottom:10px;">🎉 Nonton Bareng (Nobar)</h3>
-                    <p style="font-size:13px; color:#aaa; margin-bottom:20px;">Buat room atau gabung kode room teman Anda (maksimal 5 orang per room).</p>
-                    <input type="text" id="roomCodeInput" placeholder="Masukkan Kode Room (misal: nobar123)" style="width:100%; margin-bottom:10px; text-align:center;"><br>
-                    <button id="joinRoomBtn" style="width:100%;">Masuk Room Nobar</button>
-                    <p id="nobarStatus" style="color:#ff5252; margin-top:10px; font-size:13px;"></p>
-                </div>
-            `;
-
-            document.getElementById('joinRoomBtn').onclick = () => {
-                let code = document.getElementById('roomCodeInput').value.trim();
-                if(!code) { document.getElementById('nobarStatus').innerText = 'Masukkan kode room!'; return; }
-                socket.emit('join_nobar_room', { roomCode: code, email: currentUserEmail });
-            };
-
-            socket.off('nobar_joined');
-            socket.off('nobar_error');
-            socket.on('nobar_joined', code => { bukaRuangNobarAktif(code); });
-            socket.on('nobar_error', err => { document.getElementById('nobarStatus').innerText = err; });
-        }
-
-        function bukaRuangNobarAktif(code) {
-            let container = document.getElementById('animeContainer');
-            container.innerHTML = `
-                <div style="max-width:800px; margin:0 auto; background:#1f1f1f; padding:20px; border-radius:8px;">
-                    <h3>📺 Ruang Nobar Aktif: <span style="color:#00bcd4;">${code}</span></h3>
-                    <p style="font-size:12px; color:#aaa; margin-bottom:15px;">Bagikan kode room ini ke maksimal 4 teman Anda.</p>
-                    <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                        <div style="flex-grow:2; min-width:300px;">
-                            <div id="nobarVideoArea" style="background:#000; height:300px; display:flex; align-items:center; justify-content:center; border-radius:6px; color:#888;">
-                                Ruang Nobar Siap Digunakan.
-                            </div>
-                        </div>
-                        <div style="flex-grow:1; min-width:250px;">
-                            <h4>Chat Room Nobar</h4>
-                            <div class="chat-box" id="nobarChatBox" style="height:230px;"></div>
-                            <div style="display:flex; gap:5px;">
-                                <input type="text" id="nobarChatInput" placeholder="Chat room..." style="flex-grow:1;">
-                                <button id="nobarSendBtn">Kirim</button>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="btn-secondary" id="leaveNobarBtn" style="margin-top:15px;">Keluar Room</button>
-                </div>
-            `;
-            document.getElementById('leaveNobarBtn').onclick = bukaNobarLobby;
-        }
-
-        // --- FRIEND SYSTEM & PROFILE ---
-        function bukaMenuTeman() {
-            switchView('friend');
-            document.getElementById('sectionTitle').innerText = 'Daftar Teman & Pertemanan';
-            let container = document.getElementById('animeContainer');
-            container.style.display = 'block';
-            let reqs = userData.friends?.requests || [];
-            let list = userData.friends?.list || [];
-
-            container.innerHTML = `
-                <div style="max-width:700px; margin:0 auto; background:#1f1f1f; padding:20px; border-radius:8px;">
-                    <h3>👥 Tambah Teman</h3>
-                    <div style="display:flex; gap:10px; margin:15px 0;">
-                        <input type="email" id="friendEmailInput" placeholder="Email teman (@gmail.com)" style="flex-grow:1;">
-                        <button id="sendFriendReqBtn">Kirim Permintaan</button>
-                    </div>
-                    <p id="friendMsg" style="font-size:12px; color:#4caf50; margin-bottom:15px;"></p>
-
-                    <h4>📥 Permintaan Masuk (${reqs.length})</h4>
-                    <div id="reqList" style="margin:10px 0 20px 0;">
-                        ${reqs.length === 0 ? '<p style="color:#888; font-size:13px;">Tidak ada permintaan pertemanan.</p>' : reqs.map(r => `<div style="background:#262626; padding:8px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;"><span>${r}</span> <button onclick="terimaTeman('${r}')" style="padding:4px 10px; font-size:11px;">Terima</button></div>`).join('')}
-                    </div>
-
-                    <h4>🤝 Daftar Teman Saya (${list.length})</h4>
-                    <div id="friendList" style="margin:10px 0;">
-                        ${list.length === 0 ? '<p style="color:#888; font-size:13px;">Belum ada teman.</p>' : list.map(f => `<div style="background:#262626; padding:10px; margin-bottom:5px; border-radius:4px;">👤 ${f}</div>`).join('')}
-                    </div>
-                </div>
-            `;
-
-            document.getElementById('sendFriendReqBtn').onclick = async () => {
-                let receiver = document.getElementById('friendEmailInput').value.trim();
-                let res = await fetch(`${API_URL}/api/friends/request`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sender: currentUserEmail, receiver}) });
-                let json = await res.json();
-                if(json.success) document.getElementById('friendMsg').innerText = 'Permintaan pertemanan terkirim!';
-                else document.getElementById('friendMsg').innerText = json.message;
-            };
-        }
-
-        async function terimaTeman(friendEmail) {
-            await fetch(`${API_URL}/api/friends/accept`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user: currentUserEmail, friend: friendEmail}) });
-            await syncDataCloud();
-            bukaMenuTeman();
-        }
-
-        function bukaProfilSaya() {
-            switchView('profile');
-            document.getElementById('sectionTitle').innerText = 'Profil & Kustomisasi';
-            let container = document.getElementById('animeContainer');
-            container.style.display = 'block';
-            let p = userData.profile || { avatar: '', banner: '', bio: '' };
-
-            container.innerHTML = `
-                <div style="max-width:700px; margin:0 auto; background:#1f1f1f; border-radius:8px; overflow:hidden;">
-                    <div class="profile-banner" style="background-image: url('${p.banner || 'https://via.placeholder.com/600x200?text=Banner'}');">
-                        <img src="${p.avatar || 'https://via.placeholder.com/150?text=Avatar'}" class="profile-avatar" alt="Avatar">
-                    </div>
-                    <div class="profile-info" style="padding-top:40px;">
-                        <h3 style="color:#00bcd4;">${userData.nickname || currentUserEmail} <span style="font-size:12px; color:#ffcc00;">(${userData.level === 999 ? '👑 Admin' : 'Lv.' + userData.level})</span></h3>
-                        <p style="font-size:12px; color:#aaa; margin:10px 0;">Bio: ${p.bio || 'Belum ada bio.'}</p>
-                        
-                        <h4 style="margin-top:20px; border-bottom:1px solid #333; padding-bottom:5px;">Edit Profil & Galeri Avatar</h4>
-                        <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
-                            <label style="font-size:12px; color:#aaa;">Upload Foto Avatar dari Galeri:</label>
-                            <input type="file" id="avatarFile" accept="image/*" style="background:#2a2a2a; padding:6px;">
-                            <label style="font-size:12px; color:#aaa;">Upload Banner dari Galeri:</label>
-                            <input type="file" id="bannerFile" accept="image/*" style="background:#2a2a2a; padding:6px;">
-                            <label style="font-size:12px; color:#aaa;">Bio Singkat:</label>
-                            <input type="text" id="editBio" value="${p.bio || ''}" style="width:100%;">
-                            <button id="saveProfileBtn" style="margin-top:10px;">Simpan Perubahan Profil</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            document.getElementById('saveProfileBtn').onclick = async () => {
-                let avatarFile = document.getElementById('avatarFile').files[0];
-                let bannerFile = document.getElementById('bannerFile').files[0];
-                let formData = new FormData();
-                formData.append('email', currentUserEmail);
-                formData.append('bio', document.getElementById('editBio').value.trim());
-                if(avatarFile) formData.append('avatar', avatarFile);
-                if(bannerFile) formData.append('banner', bannerFile);
-
-                let res = await fetch(`${API_URL}/api/user/profile/update`, { method: 'POST', body: formData });
-                let json = await res.json();
-                if(json.success) {
-                    userData.profile = json.data;
-                    alert('Profil berhasil diperbarui!');
-                    bukaProfilSaya();
-                }
-            };
-        }
-
-        function bukaPanelAdmin() {
-            let modal = document.getElementById('detailModal');
-            let body = document.getElementById('modalBody');
-            modal.style.display = 'flex';
-            body.innerHTML = '<h2>Panel Admin</h2><p>Memuat...</p>';
-            fetch(`${API_URL}/api/admin/users`).then(r => r.json()).then(json => {
-                if(json.success) {
-                    let rows = json.data.map((u,i) => `<tr><td>${i+1}</td><td>${u.nickname}</td><td>${u.email}</td><td>Lv.${u.level}</td></tr>`).join('');
-                    body.innerHTML = `<h2 style="color:#ff9800;">👑 Panel Admin Naonime</h2><table><thead><tr><th>No</th><th>Nickname</th><th>Email</th><th>Level</th></tr></thead><tbody>${rows}</tbody></table>`;
-                }
-            });
         }
 
         function switchView(v) {
-            currentView = v;
-            ['homeNav', 'favNav', 'historyNav', 'chatNav', 'nobarNav', 'friendNav', 'profileNav', 'adminNav'].forEach(id => {
+            ['homeNav', 'donghuaNav', 'mangaNav', 'filmNav', 'favNav', 'historyNav', 'chatNav', 'nobarNav', 'friendNav', 'profileNav', 'adminNav'].forEach(id => {
                 let el = document.getElementById(id);
                 if(el) el.classList.remove('active');
             });
             if(v==='home') document.getElementById('homeNav').classList.add('active');
+            else if(v==='donghua') document.getElementById('donghuaNav').classList.add('active');
+            else if(v==='manga') document.getElementById('mangaNav').classList.add('active');
+            else if(v==='film') document.getElementById('filmNav').classList.add('active'); 
             else if(v==='fav') document.getElementById('favNav').classList.add('active');
             else if(v==='history') document.getElementById('historyNav').classList.add('active');
             else if(v==='chat') document.getElementById('chatNav').classList.add('active');
@@ -440,26 +237,284 @@
             switchView('home');
             document.getElementById('sectionTitle').innerText = "Anime Terbaru";
             let container = document.getElementById('animeContainer');
-            container.style.display = 'grid';
-            container.innerHTML = '<div class="loading">Memuat anime...</div>';
+            container.innerHTML = '<div class="loading">Memuat Anime Terbaru...</div>';
             try {
                 let res = await fetch(`${API_URL}/api/home`);
                 let json = await res.json();
-                if(json.success) tampilkanGrid(json.data.items, "Anime Terbaru");
-            } catch(e) { container.innerHTML = '<div class="loading" style="color:#ff5252;">Gagal memuat API.</div>'; }
+                if(json.success && json.data.items && json.data.items.length > 0) {
+                    tampilkanGrid(json.data.items, "Anime Terbaru");
+                } else {
+                    container.innerHTML = '<div class="loading" style="color:#ff5252;">Gagal memuat Anime dari server.</div>';
+                }
+            } catch(e) {
+                container.innerHTML = '<div class="loading" style="color:#ff5252;">Terjadi kesalahan koneksi Anime.</div>';
+            }
         }
 
-        async function cariAnime() {
+        async function muatDonghuaTerbaru() {
+            switchView('donghua');
+            document.getElementById('sectionTitle').innerText = "Donghua Terbaru (Anichin)";
+            let container = document.getElementById('animeContainer');
+            container.innerHTML = '<div class="loading">Memuat Donghua...</div>';
+            try {
+                let res = await fetch(`${API_URL}/api/donghua/home`);
+                let json = await res.json();
+                if(json.success && json.data.items) {
+                    let items = json.data.items.map(i => ({
+                        ...i,
+                        poster: i.poster || i.thumbnail || i.image || i.cover
+                    }));
+                    tampilkanGrid(items, "Donghua Terbaru");
+                } else {
+                    container.innerHTML = '<div class="loading" style="color:#ff5252;">Gagal memuat Donghua.</div>';
+                }
+            } catch(e) { 
+                container.innerHTML = '<div class="loading" style="color:#ff5252;">Gagal terhubung ke server Donghua.</div>'; 
+            }
+        }
+
+        async function muatMenuManga() {
+            switchView('manga');
+            document.getElementById('sectionTitle').innerText = "Daftar Manga & Komik Terbaru";
+            let container = document.getElementById('animeContainer');
+            container.innerHTML = '<div class="loading">Memuat Komik...</div>';
+            try {
+                let res = await fetch(`${API_URL}/api/mangaku/home`);
+                let json = await res.json();
+                let list = json.data.manga_list || [];
+                
+                let items = list.map(item => ({
+                    title: item.title,
+                    url: item.endpoint,
+                    poster: item.thumb,
+                    episode: item.chapter || item.type || 'Update',
+                    source: 'mangaku'
+                }));
+                
+                tampilkanGrid(items, "Daftar Manga & Komik Terbaru");
+            } catch(e) {
+                container.innerHTML = '<div class="loading" style="color:#ff5252;">Gagal memuat daftar komik.</div>';
+            }
+        }
+
+        async function muatFilmTerbaru() {
+            switchView('film');
+            document.getElementById('sectionTitle').innerText = "Film & Series Terbaru";
+            let container = document.getElementById('animeContainer');
+            container.innerHTML = '<div class="loading">Memuat Film...</div>';
+            try {
+                let res = await fetch(`${API_URL}/api/film/home`);
+                let json = await res.json();
+                if(json.success && json.data.items) {
+                    tampilkanGrid(json.data.items, "Film & Series Terbaru");
+                } else {
+                    container.innerHTML = '<div class="loading" style="color:#ff5252;">Gagal memuat film.</div>';
+                }
+            } catch(e) { 
+                container.innerHTML = '<div class="loading" style="color:#ff5252;">Gagal terhubung ke server film.</div>'; 
+            }
+        }
+
+        // --- GLOBAL CHAT YANG DISEMPURNAKAN ---
+        function bukaPublicChat() {
+            switchView('chat');
+            document.getElementById('sectionTitle').innerText = "Global Chat Naonime";
+            let container = document.getElementById('animeContainer');
+            container.style.display = 'block';
+            container.style.gridTemplateColumns = 'none';
+            container.innerHTML = `
+                <div style="background:#1e1e1e; padding:20px; border-radius:8px;">
+                    <div class="chat-box" id="chatMessages"></div>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="chatInput" placeholder="Ketik pesan publik..." style="flex-grow:1;">
+                        <button id="sendChatBtn">Kirim</button>
+                    </div>
+                </div>
+            `;
+            let box = document.getElementById('chatMessages');
+            socket.off('public_chat_history'); socket.off('new_public_message');
+            socket.emit('load_public_chat');
+            
+            socket.on('public_chat_history', (msgs) => {
+                box.innerHTML = msgs.map(m => `<div class="chat-msg"><span>[${m.badge}] ${m.nickname}:</span> ${m.text} <div style="font-size:9px; color:#777; text-align:right;">${m.time}</div></div>`).join('');
+                box.scrollTop = box.scrollHeight;
+            });
+            
+            socket.on('new_public_message', (m) => {
+                box.innerHTML += `<div class="chat-msg"><span>[${m.badge}] ${m.nickname}:</span> ${m.text} <div style="font-size:9px; color:#777; text-align:right;">${m.time}</div></div>`;
+                box.scrollTop = box.scrollHeight;
+            });
+
+            document.getElementById('sendChatBtn').onclick = () => {
+                let text = document.getElementById('chatInput').value.trim();
+                if(!text) return;
+                socket.emit('send_public_message', { email: currentUserEmail, text });
+                document.getElementById('chatInput').value = '';
+            };
+            document.getElementById('chatInput').onkeypress = (e) => {
+                if(e.key === 'Enter') document.getElementById('sendChatBtn').click();
+            };
+        }
+
+        // --- FITUR NOBAR DENGAN JUDUL ANIME, EPISODE, & ID ROOM ---
+        function bukaNobarLobby() {
+            switchView('nobar');
+            document.getElementById('sectionTitle').innerText = "Lobby Nobar (Nonton Bareng)";
+            let container = document.getElementById('animeContainer');
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div style="background:#1e1e1e; padding:20px; border-radius:8px;">
+                    <p style="margin-bottom:15px; color:#aaa;">Buat room nobar dengan memasukkan judul anime, episode, dan ID room unik.</p>
+                    <div style="display:flex; flex-direction:column; gap:10px; max-width:400px; margin-bottom:20px;">
+                        <input type="text" id="nobarRoomId" placeholder="ID Room (Contoh: room123)">
+                        <input type="text" id="nobarAnimeTitle" placeholder="Judul Anime / Donghua">
+                        <input type="text" id="nobarEpisode" placeholder="Episode (Contoh: Episode 01)">
+                        <button id="createRoomBtn">Buat / Masuk Room Nobar</button>
+                    </div>
+                    <div id="nobarStatus" style="color:#4caf50; font-weight:bold;"></div>
+                </div>
+            `;
+            document.getElementById('createRoomBtn').onclick = () => {
+                let roomCode = document.getElementById('nobarRoomId').value.trim();
+                let animeTitle = document.getElementById('nobarAnimeTitle').value.trim();
+                let episode = document.getElementById('nobarEpisode').value.trim();
+                if(!roomCode || !animeTitle || !episode) {
+                    alert('Harap isi ID Room, Judul Anime, dan Episode secara lengkap!');
+                    return;
+                }
+                socket.emit('join_nobar_room', { roomCode, email: currentUserEmail, animeTitle, episode });
+            };
+            socket.off('nobar_joined');
+            socket.on('nobar_joined', (data) => {
+                document.getElementById('nobarStatus').innerText = `Berhasil masuk ke Room: ${data.roomCode} | Menonton: ${data.animeTitle} - ${data.episode}`;
+            });
+            socket.off('nobar_error');
+            socket.on('nobar_error', (msg) => {
+                alert(msg);
+            });
+        }
+
+        // --- MENU TEMAN BERBASIS NICKNAME ---
+        function bukaMenuTeman() {
+            switchView('friend');
+            document.getElementById('sectionTitle').innerText = "Daftar Teman";
+            let container = document.getElementById('animeContainer');
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div style="background:#1e1e1e; padding:20px; border-radius:8px;">
+                    <p style="color:#aaa; margin-bottom:15px;">Tambah teman menggunakan Nickname publik mereka.</p>
+                    <div style="display:flex; gap:10px; margin-bottom:20px;">
+                        <input type="text" id="friendNicknameInput" placeholder="Masukkan Nickname teman...">
+                        <button id="addFriendBtn">Tambah Teman</button>
+                    </div>
+                    <div id="friendListContainer"></div>
+                </div>
+            `;
+            loadFriendData();
+            document.getElementById('addFriendBtn').onclick = async () => {
+                let nickname = document.getElementById('friendNicknameInput').value.trim();
+                if(!nickname) return;
+                let res = await fetch(`${API_URL}/api/friends/request`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ senderEmail: currentUserEmail, receiverNickname: nickname })
+                });
+                let json = await res.json();
+                alert(json.message);
+                loadFriendData();
+            };
+        }
+
+        async function loadFriendData() {
+            let res = await fetch(`${API_URL}/api/user/${currentUserEmail}/data`);
+            let json = await res.json();
+            if(json.success) {
+                userData = json.data;
+                let fContainer = document.getElementById('friendListContainer');
+                let reqHtml = (userData.friends.requests || []).map(r => `<div>Permintaan dari: <b>${r}</b> <button onclick="acceptFriend('${r}')">Terima</button></div>`).join('');
+                let listHtml = (userData.friends.list || []).map(l => `<li>${l}</li>`).join('');
+                fContainer.innerHTML = `
+                    <h4 style="color:#00bcd4; margin-bottom:10px;">Permintaan Pertemanan</h4>
+                    ${reqHtml || '<p style="color:#777; font-size:12px;">Tidak ada permintaan.</p>'}
+                    <h4 style="color:#00bcd4; margin:15px 0 10px 0;">Daftar Teman</h4>
+                    <ul>${listHtml || '<p style="color:#777; font-size:12px;">Belum ada teman.</p></ul>'}
+                `;
+            }
+        }
+
+        async function acceptFriend(senderNickname) {
+            await fetch(`${API_URL}/api/friends/accept`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userEmail: currentUserEmail, senderNickname })
+            });
+            loadFriendData();
+        }
+
+        // --- PROFIL PENGGUNA (KUSTOMISASI NICKNAME, AVATAR, & BANNER) ---
+        function bukaProfilSaya() {
+            switchView('profile');
+            document.getElementById('sectionTitle').innerText = "Profil Pengguna";
+            let container = document.getElementById('animeContainer');
+            container.style.display = 'block';
+            let p = userData.profile || {};
+            container.innerHTML = `
+                <div style="background:#1e1e1e; padding:20px; border-radius:8px; max-width:600px; margin:0 auto;">
+                    <div class="profile-banner" style="background-image:url('${p.banner || 'https://via.placeholder.com/800x150?text=Banner'}')">
+                        <img src="${p.avatar || 'https://via.placeholder.com/90?text=Avatar'}" class="profile-avatar" alt="Avatar">
+                    </div>
+                    <div class="profile-info" style="margin-top:20px;">
+                        <h3 style="color:#fff; margin-bottom:5px;">${userData.nickname || currentUserEmail}</h3>
+                        <p style="font-size:12px; color:#aaa; margin-bottom:15px;">${p.bio || 'Belum ada bio.'}</p>
+                        <hr style="border-color:#333; margin-bottom:15px;">
+                        <label style="font-size:12px; color:#aaa;">Nickname Publik:</label>
+                        <input type="text" id="editNickname" placeholder="Nickname Baru" value="${userData.nickname || ''}" style="width:100%; margin-bottom:10px; margin-top:5px;">
+                        <label style="font-size:12px; color:#aaa;">URL Foto Avatar:</label>
+                        <input type="text" id="editAvatar" placeholder="URL Foto Avatar" value="${p.avatar || ''}" style="width:100%; margin-bottom:10px; margin-top:5px;">
+                        <label style="font-size:12px; color:#aaa;">URL Gambar Banner:</label>
+                        <input type="text" id="editBanner" placeholder="URL Gambar Banner" value="${p.banner || ''}" style="width:100%; margin-bottom:10px; margin-top:5px;">
+                        <label style="font-size:12px; color:#aaa;">Bio Singkat:</label>
+                        <input type="text" id="editBio" placeholder="Bio Singkat" value="${p.bio || ''}" style="width:100%; margin-bottom:15px; margin-top:5px;">
+                        <button id="saveProfileBtn">Simpan Profil</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('saveProfileBtn').onclick = async () => {
+                userData.nickname = document.getElementById('editNickname').value.trim();
+                userData.profile.avatar = document.getElementById('editAvatar').value.trim();
+                userData.profile.banner = document.getElementById('editBanner').value.trim();
+                userData.profile.bio = document.getElementById('editBio').value.trim();
+                await saveCloudData();
+                alert('Profil berhasil diperbarui!');
+                renderUserSection();
+            };
+        }
+
+        function bukaPanelAdmin() {
+            let modal = document.getElementById('detailModal');
+            let body = document.getElementById('modalBody');
+            document.getElementById('modalTitle').innerText = 'Panel Admin';
+            modal.style.display = 'flex';
+            body.innerHTML = '<p style="text-align:center; padding:20px;">Memuat data admin...</p>';
+            fetch(`${API_URL}/api/admin/users`).then(r => r.json()).then(json => {
+                if(json.success) {
+                    let rows = json.data.map((u,i) => `<tr><td>${i+1}</td><td>${u.nickname}</td><td>${u.email}</td><td>Lv.${u.level}</td></tr>`).join('');
+                    body.innerHTML = `<h2 style="color:#ff9800; margin-bottom:10px;">👑 Panel Admin Naonime</h2><table><thead><tr><th>No</th><th>Nickname</th><th>Email</th><th>Level</th></tr></thead><tbody>${rows}</tbody></table>`;
+                }
+            });
+        }
+
+        async function cariGlobal() {
             let q = document.getElementById('searchInput').value.trim();
-            if(!q) { muatAnimeTerbaru(); return; }
+            if(!q) return;
             switchView('home');
-            document.getElementById('sectionTitle').innerText = `Pencarian: "${q}"`;
+            document.getElementById('sectionTitle').innerText = `Pencarian Global: "${q}"`;
             let container = document.getElementById('animeContainer');
             container.style.display = 'grid';
             container.innerHTML = '<div class="loading">Mencari...</div>';
-            let res = await fetch(`${API_URL}/api/search?q=${q}`);
+            let res = await fetch(`${API_URL}/api/search?q=${encodeURIComponent(q)}`);
             let json = await res.json();
-            if(json.success) tampilkanGrid(json.data.items, `Pencarian: "${q}"`);
+            if(json.success) tampilkanGrid(json.data.items, `Hasil Pencarian: "${q}"`);
         }
 
         function tampilkanGrid(items, title) {
@@ -467,117 +522,198 @@
             let container = document.getElementById('animeContainer');
             container.style.display = 'grid';
             container.innerHTML = '';
-            if(!items || items.length === 0) { container.innerHTML = '<div class="loading">Tidak ada data.</div>'; return; }
-            items.forEach(anime => {
-                let slug = anime.url ? anime.url.split('/').filter(Boolean).pop() : '';
+            if(!items || items.length === 0) { container.innerHTML = '<div class="loading">Tidak ada data ditemukan.</div>'; return; }
+            
+            items.forEach(item => {
                 let card = document.createElement('div');
                 card.className = 'card';
-                card.addEventListener('click', () => bukaDetail(slug));
+                
+                if (item.source === 'film') {
+                    card.onclick = () => {
+                        if(currentUserEmail) {
+                            userData.history = userData.history.filter(h => h.title !== item.title);
+                            userData.history.unshift({ title: item.title, url: item.url, poster: item.poster, episode: item.episode || 'Film', source: 'film' });
+                            saveCloudData();
+                        }
+                        window.open(item.url, '_blank');
+                    };
+                } else {
+                    card.onclick = () => bukaDetail(item);
+                }
+                
+                let imgSrc = item.poster || item.thumbnail || item.image || item.cover || '';
+                if(imgSrc && imgSrc.startsWith('/')) {
+                    imgSrc = 'https://anichin.moe' + imgSrc;
+                }
+
                 card.innerHTML = `
-                    <img src="${anime.poster || ''}" alt="${anime.title}" onerror="this.src='https://via.placeholder.com/180x250?text=No+Image'">
+                    <img src="${imgSrc}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/180x250?text=No+Image'">
                     <div class="card-content">
-                        <h3>${anime.title}</h3>
-                        <span class="badge">${anime.episode || anime.status || 'Update'}</span>
+                        <h3>${item.title}</h3>
+                        <span class="badge">${item.episode || item.source || 'Update'}</span>
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        async function bukaDetail(slug) {
+        async function bukaDetail(item) {
             let modal = document.getElementById('detailModal');
             let body = document.getElementById('modalBody');
+            document.getElementById('modalTitle').innerText = 'Memuat detail...';
             modal.style.display = 'flex';
             body.innerHTML = '<p style="text-align:center; padding:20px;">Memuat detail...</p>';
 
-            let res = await fetch(`${API_URL}/api/anime/${slug}`);
-            let json = await res.json();
-            if(json.success) {
-                let data = json.data;
-                let isFav = currentUserEmail && userData.favorites.some(f => f.title === data.title);
+            if(currentUserEmail) {
+                userData.history = userData.history.filter(h => h.title !== (item.title));
+                userData.history.unshift({ title: item.title, url: item.url, poster: item.poster, episode: item.episode || 'Update', source: item.source });
+                saveCloudData();
+            }
 
-                let favBtn = document.createElement('button');
-                favBtn.className = `fav-btn ${isFav ? 'active' : ''}`;
-                favBtn.innerText = isFav ? '✓ Tersimpan di Favorit' : '+ Tambah ke Favorit';
-                favBtn.onclick = () => {
-                    if(!currentUserEmail) { bukaModalAuth(); return; }
-                    if(isFav) {
-                        userData.favorites = userData.favorites.filter(f => f.title !== data.title);
-                        isFav = false; favBtn.className = 'fav-btn'; favBtn.innerText = '+ Tambah ke Favorit';
-                    } else {
-                        userData.favorites.push({ title: data.title, url: `${API_URL}/api/anime/${slug}`, poster: data.poster, episode: data.episodes?.[0]?.title || 'Update' });
-                        isFav = true; favBtn.className = 'fav-btn active'; favBtn.innerText = '✓ Tersimpan di Favorit';
-                    }
-                    saveCloudData();
-                };
+            let fetchUrl = `${API_URL}/api/anime/detail?url=${encodeURIComponent(item.url)}&source=${item.source || 'otakudesu'}`;
+            if (item.source === 'anichin' && item.url.includes('episode')) {
+                fetchUrl = `${API_URL}/api/episode/detail?url=${encodeURIComponent(item.url)}&source=anichin`;
+            } else if (item.source === 'mangaku') {
+                fetchUrl = `${API_URL}/api/mangaku/detail?url=${encodeURIComponent(item.url)}`;
+            }
 
-                let epsGrid = document.createElement('div');
-                epsGrid.className = 'eps-grid';
-                data.episodes?.forEach(eps => {
-                    let epSlug = eps.url ? eps.url.split('/').filter(Boolean).pop() : '';
-                    let badge = document.createElement('div');
-                    badge.className = 'eps-badge';
-                    badge.innerText = eps.title;
-                    badge.onclick = () => {
-                        if(currentUserEmail) {
-                            userData.history = userData.history.filter(h => h.title !== data.title);
-                            userData.history.unshift({ title: data.title, url: `${API_URL}/api/anime/${slug}`, poster: data.poster, episode: eps.title });
-                            if(userData.history.length > 20) userData.history.pop();
-                            saveCloudData();
+            try {
+                let res = await fetch(fetchUrl);
+                let json = await res.json();
+                if(json.success && json.data) {
+                    let data = json.data;
+                    document.getElementById('modalTitle').innerText = data.title || item.title;
+                    let isFav = currentUserEmail && userData.favorites.some(f => f.title === (data.title || item.title));
+                    
+                    let favBtn = document.createElement('button');
+                    favBtn.className = `fav-btn ${isFav ? 'active' : ''}`;
+                    favBtn.innerText = isFav ? '✓ Tersimpan di Favorit' : '+ Tambah ke Favorit';
+                    favBtn.onclick = () => {
+                        if(!currentUserEmail) { bukaModalAuth(); return; }
+                        if(isFav) {
+                            userData.favorites = userData.favorites.filter(f => f.title !== (data.title || item.title));
+                            isFav = false; favBtn.className = 'fav-btn'; favBtn.innerText = '+ Tambah ke Favorit';
+                        } else {
+                            userData.favorites.push({ title: data.title || item.title, url: item.url, poster: data.poster || item.poster, episode: data.episodes?.[0]?.title || 'Update', source: item.source });
+                            isFav = true; favBtn.className = 'fav-btn active'; favBtn.innerText = '✓ Tersimpan di Favorit';
                         }
-                        bukaEpisode(epSlug);
+                        saveCloudData();
                     };
-                    epsGrid.appendChild(badge);
-                });
 
-                body.innerHTML = `
-                    <img src="${data.poster || ''}" alt="${data.title}" style="width:120px; border-radius:6px; float:left; margin-right:15px;">
-                    <h2>${data.title}</h2>
-                    <p style="font-size:12px; color:#aaa; margin:10px 0;"><strong>Sinopsis:</strong><br>${data.sinopsis || 'Tidak ada'}</p>
-                    <div style="clear:both;"></div>
-                `;
-                body.appendChild(favBtn);
-                let epsList = document.createElement('div');
-                epsList.className = 'eps-list';
-                epsList.innerHTML = '<h4 style="margin-top:15px;">Daftar Episode</h4>';
-                epsList.appendChild(epsGrid);
-                body.appendChild(epsList);
-            }
-        }
+                    let contentArea = document.createElement('div');
+                    contentArea.innerHTML = `
+                        <div style="display:flex; gap:15px; align-items:flex-start; flex-wrap:wrap; margin-bottom:15px;">
+                            <img src="${data.poster || item.poster || ''}" alt="${data.title || ''}" style="width:120px; border-radius:6px; object-fit:cover;" onerror="this.src='https://via.placeholder.com/120x170?text=No+Image'">
+                            <div style="flex-grow:1;">
+                                <p style="font-size:12px; color:#aaa; margin-bottom:10px;"><strong>Sinopsis:</strong><br>${data.sinopsis || 'Tidak ada sinopsis.'}</p>
+                            </div>
+                        </div>
+                    `;
+                    contentArea.appendChild(favBtn);
 
-        async function bukaEpisode(slug) {
-            let body = document.getElementById('modalBody');
-            body.innerHTML = '<p style="text-align:center; padding:20px;">Memuat link streaming...</p>';
-            let res = await fetch(`${API_URL}/api/episode/${slug}`);
-            let json = await res.json();
-            if(json.success) {
-                let ep = json.data;
-                let streamDiv = document.createElement('div');
-                streamDiv.style.marginTop = '15px';
-                if(ep.streams && Object.keys(ep.streams).length > 0) {
-                    streamDiv.innerHTML = '<h4>Pilih Resolusi:</h4>';
-                    let flex = document.createElement('div');
-                    flex.style.cssText = 'display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;';
-                    for(let [k, url] of Object.entries(ep.streams)) {
-                        let a = document.createElement('a');
-                        a.href = url; a.target = '_blank';
-                        a.innerText = k.split('_')[0];
-                        a.style.cssText = 'background:#00bcd4; color:#121212; padding:8px 15px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px;';
-                        flex.appendChild(a);
+                    if (data.streams && Object.keys(data.streams).length > 0) {
+                        let streamDiv = document.createElement('div');
+                        streamDiv.style.marginTop = '15px';
+                        streamDiv.innerHTML = '<h4 style="margin-bottom:8px;">Pilih Server / Resolusi:</h4>';
+                        let flex = document.createElement('div');
+                        flex.style.cssText = 'display:flex; gap:10px; margin-top:5px; flex-wrap:wrap;';
+                        for(let [k, link] of Object.entries(data.streams)) {
+                            let a = document.createElement('a');
+                            if (link && link.startsWith('http')) {
+                                a.href = link;
+                                a.target = '_blank';
+                            } else {
+                                a.href = '#';
+                                a.onclick = (e) => { e.preventDefault(); alert('Link server ' + k + ' tidak tersedia.'); };
+                            }
+                            a.innerText = k;
+                            a.style.cssText = 'background:#00bcd4; color:#121212; padding:8px 15px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px; display:inline-block;';
+                            flex.appendChild(a);
+                        }
+                        streamDiv.appendChild(flex);
+                        contentArea.appendChild(streamDiv);
                     }
-                    streamDiv.appendChild(flex);
+
+                    if (data.episodes && data.episodes.length > 0) {
+                        let epsGrid = document.createElement('div');
+                        epsGrid.style.cssText = 'max-height: 200px; overflow-y: auto; margin-top: 10px;';
+                        data.episodes.forEach(eps => {
+                            let badge = document.createElement('div');
+                            badge.innerText = eps.title || eps.subtitle || 'Episode';
+                            badge.style.cssText = 'background:#262626; padding:8px 10px; border-radius:4px; font-size:12px; cursor:pointer; color:#00bcd4; margin-bottom:5px;';
+                            badge.onclick = () => {
+                                bukaStreaming(eps.url || eps.slug, item.source);
+                            };
+                            epsGrid.appendChild(badge);
+                        });
+                        let listWrap = document.createElement('div');
+                        listWrap.innerHTML = `<h4 style="margin-top:15px; margin-bottom:8px;">Daftar Episode</h4>`;
+                        listWrap.appendChild(epsGrid);
+                        contentArea.appendChild(listWrap);
+                    }
+
+                    body.innerHTML = '';
+                    body.appendChild(contentArea);
                 } else {
-                    streamDiv.innerHTML = '<p style="color:#ff5252;">Link tidak tersedia.</p>';
+                    body.innerHTML = '<p style="text-align:center; color:#ff5252; padding:20px;">Gagal memuat detail dari server.</p>';
                 }
-                body.innerHTML = `<h2>${ep.title}</h2>`;
-                body.appendChild(streamDiv);
+            } catch(e) {
+                body.innerHTML = '<p style="text-align:center; color:#ff5252; padding:20px;">Kesalahan koneksi ke server.</p>';
             }
         }
 
-        function tutupModal() { document.getElementById('detailModal').style.display = 'none'; }
+        async function bukaStreaming(url, source) {
+            let body = document.getElementById('modalBody');
+            document.getElementById('modalTitle').innerText = 'Memuat Streaming...';
+            body.innerHTML = '<p style="text-align:center; padding:20px;">Memuat link streaming...</p>';
+            
+            try {
+                let res = await fetch(`${API_URL}/api/episode/detail?url=${encodeURIComponent(url)}&source=${source || 'otakudesu'}`);
+                let json = await res.json();
+                
+                if(json.success && json.data) {
+                    let ep = json.data;
+                    document.getElementById('modalTitle').innerText = ep.title || 'Streaming Episode';
+                    let streamDiv = document.createElement('div');
+                    streamDiv.style.marginTop = '15px';
+                    
+                    if(ep.streams && Object.keys(ep.streams).length > 0) {
+                        streamDiv.innerHTML = '<h4>Pilih Server / Resolusi:</h4>';
+                        let flex = document.createElement('div');
+                        flex.style.cssText = 'display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;';
+                        
+                        for(let [k, link] of Object.entries(ep.streams)) {
+                            let a = document.createElement('a');
+                            if (link && link.startsWith('http')) {
+                                a.href = link;
+                                a.target = '_blank';
+                            } else {
+                                a.href = '#';
+                                a.onclick = (e) => { e.preventDefault(); alert('Link server belum tersedia.'); };
+                            }
+                            a.innerText = k;
+                            a.style.cssText = 'background:#00bcd4; color:#121212; padding:8px 15px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:12px; display:inline-block;';
+                            flex.appendChild(a);
+                        }
+                        streamDiv.appendChild(flex);
+                    } else {
+                        streamDiv.innerHTML = '<p style="color:#ff5252;">Link streaming tidak tersedia.</p>';
+                    }
+                    
+                    body.innerHTML = '';
+                    body.appendChild(streamDiv);
+                } else {
+                    body.innerHTML = '<p style="text-align:center; color:#ff5252; padding:20px;">Gagal memuat link streaming.</p>';
+                }
+            } catch(e) {
+                body.innerHTML = '<p style="text-align:center; color:#ff5252; padding:20px;">Terjadi kesalahan koneksi.</p>';
+            }
+        }
 
-        renderUserSection();
-        muatAnimeTerbaru();
+        window.addEventListener('DOMContentLoaded', () => {
+            renderUserSection();
+            muatAnimeTerbaru();
+        });
     </script>
 </body>
 </html>
